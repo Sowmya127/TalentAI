@@ -1,0 +1,362 @@
+You are a Senior Frontend Architect and UX Designer.
+
+I am building an enterprise AI-powered Recruitment Application called TalentAI.
+
+I will attach the following documents:
+1. Business Requirements Document (BRD)
+2. Functional Requirements Document (FRD)
+3. Requirement Specification
+4. API Documentation (REST APIs)
+5. Database ER Diagram (if needed)
+
+Your job is to generate ONLY the frontend application.
+
+DO NOT generate backend code.
+DO NOT generate database code.
+DO NOT generate Spring Boot code.
+DO NOT create mock business logic.
+
+The frontend must consume the REST APIs defined in the API documentation.
+
+===========================================================
+Technology Stack
+===========================================================
+
+Frontend:
+• React 19
+• TypeScript
+• Vite
+• Material UI (MUI v7)
+• React Router
+• Axios
+• React Query (TanStack Query)
+• React Hook Form
+• Zod Validation
+• JWT Authentication
+• Context API
+• Responsive Design
+• Modern Dashboard UI
+
+===========================================================
+Design Requirements
+===========================================================
+
+Theme:
+• Minimalist Design
+
+Requirements:
+• Responsive
+• Mobile friendly
+• Accessible
+• Consistent spacing
+• Material Design
+• Smooth animations
+• Clean typography
+
+===========================================================
+Generate the following pages
+===========================================================
+
+Authentication
+
+• Login
+• Register
+• Forgot Password
+• Reset Password
+
+Dashboard
+
+• Dashboard based on logged in role
+
+Candidate Module
+
+• Candidate Dashboard
+• Candidate Profile
+• Edit Profile
+• Resume Upload
+• Resume Parsing Result
+• Skills
+• Education
+• Work Experience
+• Certifications
+• Applied Jobs
+• Job Details
+• Search Jobs
+• Job Application Confirmation
+
+Recruiter Module
+
+• Recruiter Dashboard
+• Create Job
+• Edit Job
+• View Jobs
+• View Applicants
+• Candidate Details
+• AI Match Results
+• Shortlist Candidates
+• Schedule Interview
+• Recruitment Reports
+
+Hiring Manager
+
+• Dashboard
+• Candidate Review
+• Interview Feedback
+• Approve Offer
+• Reject Offer
+
+Interviewer
+
+• Dashboard
+• Upcoming Interviews
+• Candidate Details
+• Interview Feedback Form
+
+HR Admin
+
+• Dashboard
+• User Management
+• Role Management
+• Notification Management
+• Reports
+• Audit Logs
+
+Offer Management
+
+• Generate Offer
+• Offer Approval
+• Offer Details
+
+Notifications
+
+• Notification Center
+
+Reports
+
+• Recruitment Dashboard
+• Hiring Metrics
+• Time To Hire
+• Recruitment Funnel
+• Candidate Reports
+
+Settings
+
+• Profile
+• Change Password
+• Preferences
+
+===========================================================
+Application Requirements
+===========================================================
+
+Generate:
+
+✔ Complete routing
+✔ Sidebar navigation
+✔ Top navigation
+✔ Breadcrumbs
+✔ Responsive layouts
+✔ Reusable components
+✔ Search
+✔ Pagination
+✔ Sorting
+✔ Filters
+✔ Loading Skeletons
+✔ Empty States
+✔ Error Pages
+✔ 404 Page
+✔ Unauthorized Page
+✔ Session Expired Page
+
+===========================================================
+Role Based Navigation
+===========================================================
+
+Candidate
+
+Recruiter
+
+Hiring Manager
+
+Interviewer
+
+HR Admin
+
+System Admin
+
+The sidebar and pages must change based on JWT role.
+
+===========================================================
+REST API Integration
+===========================================================
+
+Use Axios.
+
+Create
+
+/api
+
+folder.
+
+Create
+
+Axios interceptor
+
+for JWT.
+
+All data must come from REST APIs.
+
+Never hardcode data.
+
+Never create mock data unless an API is unavailable.
+
+===========================================================
+Folder Structure
+===========================================================
+
+Generate a scalable enterprise folder structure.
+
+Example:
+
+src/
+    api/
+    assets/
+    auth/
+    components/
+    config/
+    constants/
+    context/
+    hooks/
+    layouts/
+    modules/
+        candidate/
+        recruiter/
+        interview/
+        offer/
+        admin/
+    pages/
+    routes/
+    services/
+    theme/
+    types/
+    utils/
+
+===========================================================
+Reusable Components
+===========================================================
+
+Generate reusable:
+
+Buttons
+
+Data Tables
+
+Search Filters
+
+Dialogs
+
+Confirmation Modal
+
+Loading Spinner
+
+Cards
+
+Statistics Cards
+
+Status Chips
+
+Avatar
+
+File Upload
+
+Date Picker
+
+Pagination
+
+Toast Notifications
+
+===========================================================
+Forms
+===========================================================
+
+Use
+
+React Hook Form
+
++
+
+Zod
+
+All forms must include:
+
+Validation
+
+Error Messages
+
+Required fields
+
+Proper labels
+
+Helper text
+
+===========================================================
+Dashboard
+===========================================================
+
+Use charts.
+
+Cards.
+
+KPIs.
+
+Recent Activities.
+
+Notifications.
+
+Upcoming Interviews.
+
+Job Statistics.
+
+Application Statistics.
+
+Hiring Funnel.
+
+===========================================================
+Code Quality
+===========================================================
+
+Generate production-quality code.
+
+Use TypeScript everywhere.
+
+Follow SOLID principles.
+
+Create reusable hooks.
+
+Avoid duplicated code.
+
+Follow enterprise naming conventions.
+
+===========================================================
+Important
+===========================================================
+
+Study the attached BRD, FRD and Requirement Specification carefully.
+
+Generate the UI exactly according to the documented requirements.
+
+If a requirement is unclear, infer the most appropriate enterprise recruitment UI based on systems such as Greenhouse, Lever, Workday, SAP SuccessFactors, or SmartRecruiters.
+
+Do not skip any screen described in the documents.
+
+Generate one module at a time so that the code remains maintainable and reviewable.
+
+Start by generating:
+1. Project structure
+2. Theme
+3. Routing
+4. Authentication
+5. Dashboard layout
+6. Shared reusable components
+
+Only after these are complete, proceed module by module.

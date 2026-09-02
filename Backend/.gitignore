@@ -1,0 +1,20 @@
+target/
+*.class
+*.log
+logs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local env / secrets -- never commit actual values
+.env
+.env.local

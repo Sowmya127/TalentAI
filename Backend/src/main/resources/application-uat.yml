@@ -1,0 +1,17 @@
+# UAT overrides. Values themselves still come entirely from the UAT
+# environment's variables -- this file only changes behavior, never
+# supplies secrets.
+
+springdoc:
+  swagger-ui:
+    enabled: true   # kept on in UAT for tester/BA access; disabled in prod
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    com.talentai: INFO

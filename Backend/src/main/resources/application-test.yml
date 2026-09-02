@@ -1,0 +1,13 @@
+# Automated test profile. Real projects typically point this at a
+# Testcontainers-managed MySQL instance rather than a shared database --
+# see src/test/java/.../IntegrationTestBase for the container wiring
+# once tests are added.
+
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: WARN
+    com.talentai: INFO

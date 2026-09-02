@@ -1,0 +1,16 @@
+# Production overrides. Swagger UI and verbose health details are
+# turned off; everything else is still environment-variable driven.
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.talentai: INFO

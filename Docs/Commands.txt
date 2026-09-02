@@ -1,0 +1,15 @@
+Commands
+
+MySQL start command
+powershell -ExecutionPolicy Bypass -File D:\TalentAI\start-mysql.ps1
+
+Backend start command
+powershell -ExecutionPolicy Bypass -File D:\TalentAI\start-backend.ps1
+
+Backend stop command
+powershell -Command "Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"  
+
+
+8080 → backend
+4200 → frontend
+3306 → MySQL

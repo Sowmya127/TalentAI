@@ -1,0 +1,22 @@
+# Local development overrides only. All actual secret values still
+# come from environment variables (e.g. a local .env loaded by your
+# shell or IDE run configuration) -- nothing sensitive is hardcoded
+# here, only developer-friendly defaults.
+
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    root: INFO
+    com.talentai: DEBUG
+    org.hibernate.SQL: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always
