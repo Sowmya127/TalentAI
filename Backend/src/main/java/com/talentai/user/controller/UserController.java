@@ -36,7 +36,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','HR_ADMIN')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request,
                                                      @AuthenticationPrincipal UserPrincipal principal) {
         UserResponse response = userService.createUser(request, principal.getUserId());
@@ -44,13 +44,13 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','HR_ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
     }
 
     @PutMapping("/{userId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN') or #userId == authentication.principal.userId")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','HR_ADMIN') or #userId == authentication.principal.userId")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId,
                                                      @Valid @RequestBody UpdateUserRequest request,
                                                      @AuthenticationPrincipal UserPrincipal principal) {
@@ -58,7 +58,7 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}/status")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','HR_ADMIN')")
     public ResponseEntity<UserResponse> updateUserStatus(@PathVariable Long userId,
                                                            @Valid @RequestBody UpdateUserStatusRequest request,
                                                            @AuthenticationPrincipal UserPrincipal principal) {
@@ -66,7 +66,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','HR_ADMIN')")
     public ResponseEntity<Page<UserResponse>> searchUsers(
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String status,

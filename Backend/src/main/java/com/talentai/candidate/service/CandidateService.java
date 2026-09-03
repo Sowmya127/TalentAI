@@ -120,7 +120,30 @@ public class CandidateService {
         String noticePeriod = c.getNoticePeriodDays() == null ? null : c.getNoticePeriodDays() + " days";
 
         return new CandidateProfileResponse(c.getCandidateId(), name, email, c.getCurrentLocation(), skills,
-                c.getTotalExperience(), education, c.getResumeUrl(), phone, noticePeriod, c.getSalaryExpectation());
+                computeExperience(c), education, c.getResumeUrl(), phone, noticePeriod, c.getSalaryExpectation());
+    }
+
+    /** Total experience shown on the profile is derived from the candidate's
+     *  work-experience entries (sum of each role's duration; current roles run
+     *  to today). Falls back to the stored total_experience when no entries exist. */
+    private BigDecimal computeExperience(Candidate c) {
+        List<WorkExperience> entries = workExperienceRepository.findByCandidateIdAndIsActiveTrue(c.getCandidateId());
+        if (entries.isEmpty()) {
+            return c.getTotalExperience();
+        }
+        long totalMonths = 0;
+        for (WorkExperience w : entries) {
+            if (w.getStartDate() == null) {
+                continue;
+            }
+            LocalDate end = w.getEndDate() != null ? w.getEndDate() : LocalDate.now();
+            long months = java.time.temporal.ChronoUnit.MONTHS.between(
+                    w.getStartDate().withDayOfMonth(1), end.withDayOfMonth(1));
+            if (months > 0) {
+                totalMonths += months;
+            }
+        }
+        return BigDecimal.valueOf(totalMonths / 12.0).setScale(1, java.math.RoundingMode.HALF_UP);
     }
 
     // --- Skills ---

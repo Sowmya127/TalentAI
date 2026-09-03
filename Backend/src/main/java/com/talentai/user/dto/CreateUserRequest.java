@@ -29,4 +29,11 @@ public class CreateUserRequest {
 
     @Size(max = 20)
     private String phoneNumber;
+
+    /** Optional initial password set by the administrator so the new internal
+     *  user can log in immediately. If omitted, a random temporary password is
+     *  generated server-side (kept only until the notification domain can email
+     *  a "set your password" link). Must be at least 8 characters when provided. */
+    @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+    private String password;
 }

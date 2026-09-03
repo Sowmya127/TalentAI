@@ -43,15 +43,18 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findByRoleName(request.getRoleName())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + request.getRoleName()));
 
-        // TODO(notification domain): send a "set your password" email
-        // instead of generating a throwaway temp password server-side.
-        String tempPassword = UUID.randomUUID().toString().substring(0, 12);
+        // Use the administrator-supplied password if given so the new user can
+        // log in immediately; otherwise fall back to a throwaway temp password
+        // (TODO notification domain: email a "set your password" link instead).
+        String initialPassword = (request.getPassword() != null && !request.getPassword().isBlank())
+                ? request.getPassword()
+                : UUID.randomUUID().toString().substring(0, 12);
 
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(tempPassword))
+                .passwordHash(passwordEncoder.encode(initialPassword))
                 .phoneNumber(request.getPhoneNumber())
                 .userStatus("Active")
                 .isActive(true)
@@ -68,6 +71,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserResponse getUser(Long userId) {
         User user = findUserOrThrow(userId);
         return toResponse(user, rolesFor(userId));
@@ -113,6 +117,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserResponse> searchUsers(String roleName, String status, Pageable pageable) {
         return userRepository.search(roleName, status, pageable)
                 .map(u -> toResponse(u, rolesFor(u.getUserId())));

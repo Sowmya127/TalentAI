@@ -67,6 +67,7 @@ public class SecurityConfig {
             .exceptionHandling(eh -> eh.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v1/auth/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/v1/public/**").permitAll()
                 .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui/**", "/v1/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
