@@ -39,6 +39,7 @@ export const ROUTES = {
 
   // Hiring manager module
   hiringManagerDashboard: '/hiring-manager',
+  hiringManagerJobApprovals: '/hiring-manager/job-approvals',
   hiringManagerCandidateReview: '/hiring-manager/applications/:applicationId/review',
   hiringManagerInterviewFeedback: '/hiring-manager/interviews/:interviewId/feedback',
   hiringManagerApproveOffer: '/hiring-manager/offers/:offerId/approve',

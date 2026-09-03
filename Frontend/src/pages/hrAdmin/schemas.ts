@@ -6,6 +6,7 @@ export const createUserSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email').max(150),
   roleName: z.string().min(1, 'Role is required'),
   phoneNumber: z.string().max(20).optional().or(z.literal('')),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(100),
 })
 export type CreateUserFormValues = z.infer<typeof createUserSchema>
 

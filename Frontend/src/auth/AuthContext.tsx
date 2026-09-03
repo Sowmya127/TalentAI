@@ -65,8 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     tokenStorage.clear()
     setUser(null)
-    navigate(ROUTES.login, { replace: true })
-  }, [navigate])
+    // Hard-redirect to the public landing page. A client-side navigate() loses a
+    // race: React commits setUser(null) first, so RequireAuth on the current
+    // protected route redirects to /login before the navigate lands. A full
+    // reload also clears all in-memory state (React Query cache, etc.) on logout.
+    window.location.assign(ROUTES.home)
+  }, [])
 
   const roleKeys = useMemo(
     () => (user?.roles ?? []).map(toRoleKey).filter((key): key is RoleKey => key !== undefined),

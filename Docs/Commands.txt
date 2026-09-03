@@ -13,3 +13,72 @@ powershell -Command "Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAc
 8080 → backend
 4200 → frontend
 3306 → MySQL
+
+
+
+Unit Test
+powershell -Command "cd D:\TalentAI\Backend; $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot'; & 'C:\dev-tools\apache-maven-3.9.9\bin\mvn.cmd' test -Dtest='Candidate*Test'"
+
+
+
+Git
+Your everyday git loop from now on
+Because you set up tracking (-u), future pushes are just git push — no need for origin main again.
+
+After making changes:
+git add -A
+Review what's staged (optional but good habit):
+git status
+Commit with a message describing the change:
+git commit -m "Describe what you changed"
+Upload:
+git push
+
+
+Users (pwd: Password@123)
+recurter@talentai.local
+manager@talentai.local
+interviewer@talentai.local
+admin@talentai.local 
+
+
+Job Workflow
+
+Stage	                   Who	                 Where in the UI
+Draft → Submit	        Recruiter	Jobs ⋮ menu → Submit for Approval (or Edit page)
+Pending → Approve	Hiring Manager	Sidebar → Requisition Approvals → Approve
+Approved → Publish	Recruiter	Jobs ⋮ menu → Publish
+
+
+Interview Workflow
+
+Application status (interview leg)                   Driven by
+Shortlisted	                       recruiter shortlists → eligible to schedule
+Interview Scheduled	               interview scheduled
+Interview Completed	               feedback submitted
+Selected / Rejected	               Hiring Manager's decision after reviewing feedback
+
+
+Interview States
+
+Interview status	   Set when
+Scheduled	   interview created
+Rescheduled	   date changed
+Cancelled	   called off
+Completed	   an interviewer submits feedback
+ 
+
+Users Created
+
+HRM 1
+hrm1@gmail.com
+Hiring manager
+pwd 11112222
+
+Recuirter 1
+recuirter1@gmail.com
+11112222
+
+Interviewer 1
+interviewer1@gmail.com
+11112222

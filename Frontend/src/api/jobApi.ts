@@ -14,6 +14,10 @@ export const jobApi = {
   search: (params: JobSearchParams) =>
     axiosClient.get<ListEnvelope<JobDetail>>(ENDPOINTS.jobs.search, { params }).then((res) => res.data),
 
+  /** Public, unauthenticated list of Published jobs (landing page "Live Now"). */
+  publicPublished: (params: { page?: number; size?: number } = {}) =>
+    axiosClient.get<ListEnvelope<JobDetail>>(ENDPOINTS.jobs.publicPublished, { params }).then((res) => res.data),
+
   getJob: (jobId: number) => axiosClient.get<JobDetail>(ENDPOINTS.jobs.byId(jobId)).then((res) => res.data),
 
   createJob: (payload: CreateJobRequest) =>

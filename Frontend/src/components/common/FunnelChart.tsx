@@ -2,7 +2,7 @@ import { Box } from '@mui/material'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { BRAND } from '@/theme/palette'
 
-const FUNNEL_COLORS = ['#6B7C98', '#6E8296', '#7B7F8A', '#93857B', '#AB978C', '#16A34A']
+const FUNNEL_COLORS = ['#14213D', '#2C3E63', '#5C6784', '#C98A2E', '#FCA311', '#16A34A']
 
 export interface FunnelDatum {
   stage: string

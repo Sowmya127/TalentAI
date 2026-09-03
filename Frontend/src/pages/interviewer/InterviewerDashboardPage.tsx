@@ -4,7 +4,7 @@ import { Grid, Typography } from '@mui/material'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
 import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
-import { PageHeader } from '@/components/common/PageHeader'
+import { DashboardHero } from '@/components/common/DashboardHero'
 import { StatCard } from '@/components/common/StatCard'
 import { StatCardSkeleton } from '@/components/common/LoadingSkeleton'
 import { SectionCard } from '@/components/common/SectionCard'
@@ -70,10 +70,10 @@ export default function InterviewerDashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={`${greeting()}, ${displayName}`}
-        description="Your interview schedule and pending evaluations."
-        breadcrumbs={[{ label: 'Dashboard', to: ROUTES.interviewerDashboard }, { label: 'Interviewer' }]}
+      <DashboardHero
+        eyebrow={todayCount > 0 ? `${todayCount} interview${todayCount > 1 ? 's' : ''} today` : undefined}
+        title={`${greeting()}, ${displayName}.`}
+        subtitle="Your interview schedule and pending evaluations."
       />
 
       <Grid container spacing={2.5} sx={{ mb: 3 }}>

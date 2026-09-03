@@ -10,7 +10,6 @@ import { AppAvatar } from '@/components/common/AppAvatar'
 import { EmptyState } from '@/components/common/EmptyState'
 import { CandidateProfileGate } from '@/components/candidate/CandidateProfileGate'
 import { candidateApi } from '@/api/candidateApi'
-import { formatCurrency } from '@/utils/formatters'
 import { ROUTES } from '@/constants/routes'
 import type { CandidateProfile } from '@/types/candidate'
 
@@ -80,11 +79,6 @@ function ProfileBody({ profile }: { profile: CandidateProfile }) {
                   value={profile.experience !== null ? `${profile.experience} yrs` : '—'}
                 />
                 <InfoRow label="Education" value={profile.education ?? '—'} />
-                <InfoRow label="Notice Period" value={profile.noticePeriod ?? '—'} />
-                <InfoRow
-                  label="Salary Expectation"
-                  value={profile.salaryExpectation ? formatCurrency(profile.salaryExpectation) : '—'}
-                />
               </Stack>
               <Divider flexItem />
               {profile.resumeUrl ? (

@@ -9,9 +9,11 @@ interface StatCardProps {
   icon?: ReactNode
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
   trend?: { value: number; label?: string }
+  /** Small muted line under the value, e.g. "+1 this week" or "Interview likely next". */
+  caption?: string
 }
 
-export function StatCard({ label, value, icon, color = 'primary', trend }: StatCardProps) {
+export function StatCard({ label, value, icon, color = 'primary', trend, caption }: StatCardProps) {
   const theme = useTheme()
   const mainColor = theme.palette[color].main
   const isPositive = (trend?.value ?? 0) >= 0
@@ -24,6 +26,11 @@ export function StatCard({ label, value, icon, color = 'primary', trend }: StatC
             {label}
           </Typography>
           <Typography variant="h4">{value}</Typography>
+          {caption ? (
+            <Typography variant="caption" color="text.secondary">
+              {caption}
+            </Typography>
+          ) : null}
           {trend ? (
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
               {isPositive ? (

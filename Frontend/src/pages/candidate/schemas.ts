@@ -8,15 +8,6 @@ export type CreateProfileFormValues = z.infer<typeof createProfileSchema>
 
 export const editProfileSchema = z.object({
   location: z.string().min(1, 'Location is required').max(100),
-  noticePeriod: z.string().max(50).optional().or(z.literal('')),
-  // HTML number inputs still round-trip through RHF as strings — kept as a
-  // string here and coerced to a number where it's actually sent (see
-  // CandidateProfileEditPage's mutationFn) to avoid fighting the resolver's
-  // input/output generic split.
-  salaryExpectation: z
-    .string()
-    .optional()
-    .refine((v) => !v || !Number.isNaN(Number(v)), 'Must be a number'),
 })
 export type EditProfileFormValues = z.infer<typeof editProfileSchema>
 

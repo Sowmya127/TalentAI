@@ -55,11 +55,18 @@ export default function ViewJobsPage() {
       }),
   })
 
+  const ACTION_LABELS: Record<'submit' | 'publish' | 'close' | 'archive', string> = {
+    submit: 'submitted for approval',
+    publish: 'published',
+    close: 'closed',
+    archive: 'archived',
+  }
+
   const actionMutation = useMutation({
-    mutationFn: ({ job, action }: { job: JobDetail; action: 'publish' | 'close' | 'archive' }) =>
+    mutationFn: ({ job, action }: { job: JobDetail; action: 'submit' | 'publish' | 'close' | 'archive' }) =>
       jobApi[action](job.jobId),
     onSuccess: (_res, { action }) => {
-      toast.success(`Job ${action === 'publish' ? 'published' : action === 'close' ? 'closed' : 'archived'}.`)
+      toast.success(`Job ${ACTION_LABELS[action]}.`)
       queryClient.invalidateQueries({ queryKey: ['recruiterJobs'] })
       closeMenu()
     },
@@ -195,6 +202,11 @@ export default function ViewJobsPage() {
           >
             AI Match Results
           </MenuItem>
+          {menuJob?.status === 'Draft' ? (
+            <MenuItem onClick={() => menuJob && actionMutation.mutate({ job: menuJob, action: 'submit' })}>
+              Submit for Approval
+            </MenuItem>
+          ) : null}
           {menuJob?.status === 'Approved' ? (
             <MenuItem onClick={() => menuJob && actionMutation.mutate({ job: menuJob, action: 'publish' })}>
               Publish

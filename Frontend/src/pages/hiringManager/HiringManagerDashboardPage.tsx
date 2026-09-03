@@ -5,7 +5,7 @@ import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import { PageHeader } from '@/components/common/PageHeader'
+import { DashboardHero } from '@/components/common/DashboardHero'
 import { StatCard } from '@/components/common/StatCard'
 import { StatCardSkeleton, CardSkeleton } from '@/components/common/LoadingSkeleton'
 import { SectionCard } from '@/components/common/SectionCard'
@@ -36,14 +36,24 @@ export default function HiringManagerDashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={`${greeting()}, ${displayName}`}
-        description="Candidates and offers awaiting your decision."
-        breadcrumbs={[{ label: 'Dashboard', to: ROUTES.hiringManagerDashboard }, { label: 'Hiring Manager' }]}
-        actions={
-          <AppButton variant="outlined" onClick={() => navigate(ROUTES.reportsDashboard)}>
-            View Reports
-          </AppButton>
+      <DashboardHero
+        eyebrow={s?.shortlisted ? `${s.shortlisted} candidate${s.shortlisted > 1 ? 's' : ''} awaiting your decision` : undefined}
+        title={`${greeting()}, ${displayName}.`}
+        subtitle="Candidates and offers awaiting your decision."
+        action={
+          <Stack direction="row" spacing={1.5}>
+            <AppButton variant="contained" color="secondary" onClick={() => navigate(ROUTES.hiringManagerJobApprovals)}>
+              Requisition Approvals
+            </AppButton>
+            <AppButton
+              variant="outlined"
+              color="inherit"
+              sx={{ borderColor: 'rgba(255,255,255,0.4)' }}
+              onClick={() => navigate(ROUTES.reportsDashboard)}
+            >
+              View Reports
+            </AppButton>
+          </Stack>
         }
       />
 

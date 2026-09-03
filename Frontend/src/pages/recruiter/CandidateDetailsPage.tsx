@@ -18,27 +18,43 @@ import { initialsFromFullName } from '@/utils/formatters'
 import { ROUTES } from '@/constants/routes'
 import type { CandidateApplicationSummary } from '@/types/application'
 
-/** Ordered recruitment pipeline used to render an activity timeline from a
- * candidate's current application status. Events at/before the current stage
- * are marked done; later ones show as pending. */
-const PIPELINE: { label: string; matches: string[] }[] = [
-  { label: 'Applied', matches: ['Applied', 'Screened', 'Shortlisted', 'OnHold', 'Selected', 'Rejected'] },
-  { label: 'Recruiter Viewed', matches: ['Screened', 'Shortlisted', 'OnHold', 'Selected', 'Rejected'] },
-  { label: 'Shortlisted', matches: ['Shortlisted', 'Selected'] },
-  { label: 'Interview Scheduled', matches: ['Interview', 'Selected'] },
-  { label: 'Interview Completed', matches: ['Selected'] },
-  { label: 'Offer Sent', matches: ['OfferSent', 'Offer', 'Hired'] },
-]
+/** Ordered recruitment pipeline for the activity timeline. Each stage lights up
+ * once the application's status has reached (or passed) it. */
+const PIPELINE = [
+  'Applied',
+  'Recruiter Viewed',
+  'Shortlisted',
+  'Interview Scheduled',
+  'Interview Completed',
+  'Offer Sent',
+] as const
+
+/** How far each application status has progressed, as an index into PIPELINE.
+ * Keys use the API status vocabulary (see the backend ApplicationStatusMapper):
+ * "Interview Scheduled" → "Scheduled", "Interview Completed" → "Completed",
+ * "Under Review" → "OnHold", "Offer Sent" → "OfferSent". */
+const STATUS_STAGE: Record<string, number> = {
+  Applied: 0,
+  Screened: 1,
+  OnHold: 1, // Under Review
+  Shortlisted: 2,
+  Scheduled: 3, // Interview Scheduled
+  Completed: 4, // Interview Completed
+  Selected: 4, // cleared interviews, awaiting an offer
+  OfferSent: 5,
+  Offer: 5,
+  Hired: 5,
+}
 
 function buildTimeline(app?: CandidateApplicationSummary): ActivityEvent[] {
-  const status = app?.status ?? 'Applied'
-  return PIPELINE.map((stage) => {
-    const done = stage.matches.includes(status) || (stage.label === 'Applied' && Boolean(app))
+  const reached = app ? (STATUS_STAGE[app.status] ?? 0) : -1
+  return PIPELINE.map((label, index) => {
+    const done = index <= reached
     return {
-      label: stage.label,
+      label,
       tone: done ? 'primary' : 'grey',
       done,
-      timestamp: stage.label === 'Applied' ? app?.appliedOn ?? null : null,
+      timestamp: label === 'Applied' ? app?.appliedOn ?? null : null,
     }
   })
 }

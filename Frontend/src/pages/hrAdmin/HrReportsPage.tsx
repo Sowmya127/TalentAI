@@ -9,7 +9,7 @@ import { dashboardApi } from '@/api/dashboardApi'
 import { ROUTES } from '@/constants/routes'
 import { BRAND } from '@/theme/palette'
 
-const FUNNEL_COLORS = ['#6B7C98', '#6E8296', '#7B7F8A', '#93857B', '#AB978C', '#16A34A']
+const FUNNEL_COLORS = ['#14213D', '#2C3E63', '#5C6784', '#C98A2E', '#FCA311', '#16A34A']
 
 export default function HrReportsPage() {
   const summaryQuery = useQuery({ queryKey: ['dashboardSummary'], queryFn: dashboardApi.summary })

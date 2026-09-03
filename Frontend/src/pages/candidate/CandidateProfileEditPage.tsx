@@ -25,25 +25,17 @@ function EditProfileBody({ profile }: { profile: CandidateProfile }) {
     resolver: zodResolver(editProfileSchema),
     defaultValues: {
       location: profile.location ?? '',
-      noticePeriod: profile.noticePeriod ?? '',
-      salaryExpectation: profile.salaryExpectation ? String(profile.salaryExpectation) : '',
     },
   })
 
   useEffect(() => {
-    reset({
-      location: profile.location ?? '',
-      noticePeriod: profile.noticePeriod ?? '',
-      salaryExpectation: profile.salaryExpectation ? String(profile.salaryExpectation) : '',
-    })
+    reset({ location: profile.location ?? '' })
   }, [profile, reset])
 
   const { mutate, isPending } = useMutation({
     mutationFn: (values: EditProfileFormValues) =>
       candidateApi.updateProfile(profile.candidateId, {
         location: values.location,
-        noticePeriod: values.noticePeriod || undefined,
-        salaryExpectation: values.salaryExpectation ? Number(values.salaryExpectation) : undefined,
       }),
     onSuccess: () => {
       toast.success('Profile updated successfully.')
@@ -68,22 +60,6 @@ function EditProfileBody({ profile }: { profile: CandidateProfile }) {
           <Grid container spacing={2}>
             <Grid size={12}>
               <FormTextField name="location" control={control} label="Location" autoComplete="address-level2" />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                name="noticePeriod"
-                control={control}
-                label="Notice period"
-                placeholder="e.g. 30 days"
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormTextField
-                name="salaryExpectation"
-                control={control}
-                label="Salary expectation (annual, INR)"
-                type="number"
-              />
             </Grid>
           </Grid>
           <Stack direction="row" spacing={1.5}>

@@ -25,7 +25,7 @@ export function AuthLayout() {
           width: '46%',
           p: 6,
           color: '#FFFFFF',
-          background: `linear-gradient(150deg, ${BRAND.charcoal} 0%, #4C4744 55%, ${BRAND.steel} 140%)`,
+          background: `linear-gradient(150deg, ${BRAND.charcoal} 0%, #0B1526 60%, #101B33 100%)`,
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1.25}>

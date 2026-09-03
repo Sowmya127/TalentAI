@@ -33,6 +33,7 @@ import ScheduleInterviewPage from '@/pages/recruiter/ScheduleInterviewPage'
 import RecruitmentReportsPage from '@/pages/recruiter/RecruitmentReportsPage'
 
 import HiringManagerDashboardPage from '@/pages/hiringManager/HiringManagerDashboardPage'
+import JobApprovalsPage from '@/pages/hiringManager/JobApprovalsPage'
 import CandidateReviewPage from '@/pages/hiringManager/CandidateReviewPage'
 import InterviewFeedbackPage from '@/pages/hiringManager/InterviewFeedbackPage'
 import ApproveOfferPage from '@/pages/hiringManager/ApproveOfferPage'
@@ -71,6 +72,7 @@ import RegisterPage from '@/pages/auth/RegisterPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import DashboardRedirect from '@/pages/dashboard/DashboardRedirect'
+import LandingPage from '@/pages/landing/LandingPage'
 import NotFoundPage from '@/pages/errors/NotFoundPage'
 import UnauthorizedPage from '@/pages/errors/UnauthorizedPage'
 import SessionExpiredPage from '@/pages/errors/SessionExpiredPage'
@@ -79,6 +81,9 @@ import ServerErrorPage from '@/pages/errors/ServerErrorPage'
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Public landing page — shown before login */}
+      <Route path={ROUTES.home} element={<LandingPage />} />
+
       {/* Auth */}
       <Route
         element={
@@ -106,7 +111,6 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route path={ROUTES.home} element={<DashboardRedirect />} />
         <Route path={ROUTES.dashboard} element={<DashboardRedirect />} />
 
         {/* Candidate module */}
@@ -303,6 +307,14 @@ export function AppRoutes() {
           element={
             <RequireRole roles={ROLE_GROUPS.hiringManager}>
               <HiringManagerDashboardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path={ROUTES.hiringManagerJobApprovals}
+          element={
+            <RequireRole roles={[...ROLE_GROUPS.hiringManager, ...ROLE_GROUPS.hrAdmin]}>
+              <JobApprovalsPage />
             </RequireRole>
           }
         />

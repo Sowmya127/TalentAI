@@ -54,9 +54,10 @@ function SidebarContent() {
                 '&:hover': { backgroundColor: BRAND.sidebarHover },
                 '&.Mui-selected': {
                   backgroundColor: BRAND.steel,
-                  color: '#FFFFFF',
-                  '& .MuiListItemIcon-root': { color: '#FFFFFF' },
-                  '&:hover': { backgroundColor: BRAND.steel },
+                  color: BRAND.charcoal,
+                  fontWeight: 600,
+                  '& .MuiListItemIcon-root': { color: BRAND.charcoal },
+                  '&:hover': { backgroundColor: BRAND.steelDark },
                 },
               }}
             >

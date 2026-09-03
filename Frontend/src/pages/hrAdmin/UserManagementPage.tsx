@@ -67,7 +67,7 @@ export default function UserManagementPage() {
 
   const createForm = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { firstName: '', lastName: '', email: '', roleName: 'Recruiter', phoneNumber: '' },
+    defaultValues: { firstName: '', lastName: '', email: '', roleName: 'Recruiter', phoneNumber: '', password: '' },
   })
   const editForm = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
@@ -82,9 +82,10 @@ export default function UserManagementPage() {
         email: values.email,
         roleName: values.roleName,
         phoneNumber: values.phoneNumber || undefined,
+        password: values.password,
       }),
     onSuccess: () => {
-      toast.success('User created. A temporary password was generated server-side.')
+      toast.success('User created. Share the email and password so they can sign in.')
       setCreateOpen(false)
       invalidate()
     },
@@ -172,7 +173,7 @@ export default function UserManagementPage() {
             variant="contained"
             startIcon={<PersonAddAltRoundedIcon />}
             onClick={() => {
-              createForm.reset({ firstName: '', lastName: '', email: '', roleName: 'Recruiter', phoneNumber: '' })
+              createForm.reset({ firstName: '', lastName: '', email: '', roleName: 'Recruiter', phoneNumber: '', password: '' })
               setCreateOpen(true)
             }}
           >
@@ -313,6 +314,14 @@ export default function UserManagementPage() {
           <FormTextField name="email" control={createForm.control} label="Email" type="email" />
           <FormSelect name="roleName" control={createForm.control} label="Role" options={INTERNAL_ROLE_OPTIONS} />
           <FormTextField name="phoneNumber" control={createForm.control} label="Phone number (optional)" />
+          <FormTextField
+            name="password"
+            control={createForm.control}
+            label="Initial password"
+            type="password"
+            autoComplete="new-password"
+            helperText="At least 8 characters. Share this with the user so they can sign in."
+          />
         </Stack>
       </AppDialog>
 

@@ -9,6 +9,7 @@ import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOu
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
@@ -67,6 +68,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     path: ROUTES.hiringManagerDashboard,
     icon: DashboardOutlinedIcon,
+    roles: [RoleKey.HIRING_MANAGER],
+  },
+  {
+    label: 'Requisition Approvals',
+    path: ROUTES.hiringManagerJobApprovals,
+    icon: FactCheckOutlinedIcon,
     roles: [RoleKey.HIRING_MANAGER],
   },
   { label: 'Reports', path: ROUTES.reportsDashboard, icon: BarChartOutlinedIcon, roles: [RoleKey.HIRING_MANAGER] },

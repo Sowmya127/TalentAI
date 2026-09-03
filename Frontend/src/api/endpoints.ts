@@ -49,6 +49,8 @@ export const ENDPOINTS = {
   jobs: {
     create: '/jobs',
     search: '/jobs',
+    // Public, unauthenticated list of Published jobs for the landing page.
+    publicPublished: '/public/jobs',
     byId: (jobId: number | string) => `/jobs/${jobId}`,
     submit: (jobId: number | string) => `/jobs/${jobId}/submit`,
     approve: (jobId: number | string) => `/jobs/${jobId}/approve`,

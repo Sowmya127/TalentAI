@@ -19,6 +19,8 @@ export interface CreateUserRequest {
   email: string
   roleName: string
   phoneNumber?: string
+  /** Initial password so the new user can log in immediately. */
+  password?: string
 }
 
 /** Matches Backend UpdateUserRequest — all fields optional, self or admin. */

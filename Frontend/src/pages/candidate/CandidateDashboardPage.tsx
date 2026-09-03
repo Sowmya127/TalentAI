@@ -7,7 +7,7 @@ import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
-import { PageHeader } from '@/components/common/PageHeader'
+import { DashboardHero } from '@/components/common/DashboardHero'
 import { SectionCard } from '@/components/common/SectionCard'
 import { StatCard } from '@/components/common/StatCard'
 import { StatCardSkeleton } from '@/components/common/LoadingSkeleton'
@@ -16,6 +16,7 @@ import { StatusChip } from '@/components/common/StatusChip'
 import { AppButton } from '@/components/common/AppButton'
 import { CandidateProfileGate } from '@/components/candidate/CandidateProfileGate'
 import { applicationApi } from '@/api/applicationApi'
+import { jobApi } from '@/api/jobApi'
 import { formatDate } from '@/utils/formatters'
 import { ROUTES } from '@/constants/routes'
 import type { CandidateApplicationSummary } from '@/types/application'
@@ -33,19 +34,31 @@ function DashboardBody({ profile }: { profile: CandidateProfile }) {
     queryKey: ['candidateApplications', profile.candidateId],
     queryFn: () => applicationApi.getMyApplications(profile.candidateId),
   })
+  const openRolesQuery = useQuery({
+    queryKey: ['openRolesCount'],
+    queryFn: () => jobApi.search({ status: 'Published', page: 1, size: 1 }),
+  })
 
   const applications = data?.data ?? []
   const shortlisted = applications.filter((a) => a.status === 'Shortlisted').length
   const inProgress = applications.filter((a) => !['Rejected', 'Withdrawn', 'Selected'].includes(a.status)).length
+  const openRoles = openRolesQuery.data?.totalRecords
+
+  const subtitle =
+    shortlisted > 0
+      ? `${shortlisted} role${shortlisted > 1 ? 's' : ''} already shortlisted — keep the momentum before the coffee gets cold.`
+      : "Here's where things stand with your job search."
 
   return (
     <>
-      <PageHeader
-        title={`Welcome back, ${profile.name.split(' ')[0]}`}
-        description="Here's where things stand with your job search."
-        actions={
+      <DashboardHero
+        eyebrow={openRoles ? `${openRoles} role${openRoles > 1 ? 's' : ''} open right now` : undefined}
+        title={`Welcome back, ${profile.name.split(' ')[0]}.`}
+        subtitle={subtitle}
+        action={
           <AppButton
             variant="contained"
+            color="secondary"
             startIcon={<SearchRoundedIcon />}
             onClick={() => navigate(ROUTES.candidateJobSearch)}
           >
@@ -62,6 +75,7 @@ function DashboardBody({ profile }: { profile: CandidateProfile }) {
             <StatCard
               label="Total Applications"
               value={applications.length}
+              caption="Across all roles"
               icon={<AssignmentTurnedInOutlinedIcon />}
               color="primary"
             />
@@ -71,14 +85,26 @@ function DashboardBody({ profile }: { profile: CandidateProfile }) {
           {isLoading ? (
             <StatCardSkeleton />
           ) : (
-            <StatCard label="In Progress" value={inProgress} icon={<HourglassTopOutlinedIcon />} color="info" />
+            <StatCard
+              label="In Progress"
+              value={inProgress}
+              caption="Awaiting recruiter review"
+              icon={<HourglassTopOutlinedIcon />}
+              color="info"
+            />
           )}
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           {isLoading ? (
             <StatCardSkeleton />
           ) : (
-            <StatCard label="Shortlisted" value={shortlisted} icon={<TaskAltOutlinedIcon />} color="success" />
+            <StatCard
+              label="Shortlisted"
+              value={shortlisted}
+              caption={shortlisted > 0 ? 'Interview likely next' : 'None yet'}
+              icon={<TaskAltOutlinedIcon />}
+              color="success"
+            />
           )}
         </Grid>
       </Grid>

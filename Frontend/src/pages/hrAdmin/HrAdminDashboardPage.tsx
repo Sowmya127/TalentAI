@@ -9,7 +9,7 @@ import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettin
 import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import type { ComponentType } from 'react'
-import { PageHeader } from '@/components/common/PageHeader'
+import { DashboardHero } from '@/components/common/DashboardHero'
 import { StatCard } from '@/components/common/StatCard'
 import { StatCardSkeleton } from '@/components/common/LoadingSkeleton'
 import { SectionCard } from '@/components/common/SectionCard'
@@ -45,10 +45,10 @@ export default function HrAdminDashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={`${greeting()}, ${displayName}`}
-        description="System administration and recruitment oversight."
-        breadcrumbs={[{ label: 'Dashboard', to: ROUTES.hrAdminDashboard }, { label: 'HR Admin' }]}
+      <DashboardHero
+        eyebrow={usersQuery.data?.totalElements ? `${usersQuery.data.totalElements} users in the system` : undefined}
+        title={`${greeting()}, ${displayName}.`}
+        subtitle="System administration and recruitment oversight."
       />
 
       <Grid container spacing={2.5} sx={{ mb: 3 }}>

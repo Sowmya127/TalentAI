@@ -18,7 +18,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { PageHeader } from '@/components/common/PageHeader'
+import { DashboardHero } from '@/components/common/DashboardHero'
 import { StatCard } from '@/components/common/StatCard'
 import { StatCardSkeleton, CardSkeleton } from '@/components/common/LoadingSkeleton'
 import { SectionCard } from '@/components/common/SectionCard'
@@ -33,7 +33,7 @@ import { buildPath, ROUTES } from '@/constants/routes'
 import { BRAND } from '@/theme/palette'
 import type { JobDetail } from '@/types/job'
 
-const FUNNEL_COLORS = ['#6B7C98', '#6E8296', '#7B7F8A', '#93857B', '#AB978C', '#16A34A']
+const FUNNEL_COLORS = ['#14213D', '#2C3E63', '#5C6784', '#C98A2E', '#FCA311', '#16A34A']
 
 function greeting(): string {
   const h = new Date().getHours()
@@ -79,12 +79,12 @@ export default function RecruiterDashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={`${greeting()}, ${displayName}`}
-        description="Here's your recruitment activity at a glance."
-        breadcrumbs={[{ label: 'Dashboard', to: ROUTES.recruiterDashboard }, { label: 'Recruiter' }]}
-        actions={
-          <AppButton variant="contained" startIcon={<AddRoundedIcon />} onClick={() => navigate(ROUTES.recruiterJobCreate)}>
+      <DashboardHero
+        eyebrow={s?.openPositions ? `${s.openPositions} open position${s.openPositions > 1 ? 's' : ''}` : undefined}
+        title={`${greeting()}, ${displayName}.`}
+        subtitle="Here's your recruitment activity at a glance."
+        action={
+          <AppButton variant="contained" color="secondary" startIcon={<AddRoundedIcon />} onClick={() => navigate(ROUTES.recruiterJobCreate)}>
             Create Job
           </AppButton>
         }
