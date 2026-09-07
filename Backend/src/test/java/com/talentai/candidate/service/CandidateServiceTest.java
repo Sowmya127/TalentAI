@@ -452,31 +452,32 @@ class CandidateServiceTest {
             // Act
             EducationResponse response = candidateService.addEducation(CANDIDATE_ID, req, ACTOR_ID);
 
-            // Assert — endYear stored in graduationYear; fieldOfStudy/startYear are nulled on read
+            // Assert — endYear -> graduationYear; startYear and fieldOfStudy now persist (V29)
             assertThat(response.educationId()).isEqualTo(500L);
             assertThat(response.degree()).isEqualTo("B.Tech");
             assertThat(response.endYear()).isEqualTo(2020);
-            assertThat(response.startYear()).isNull();
-            assertThat(response.fieldOfStudy()).isNull();
+            assertThat(response.startYear()).isEqualTo(2016);
+            assertThat(response.fieldOfStudy()).isEqualTo("CS");
             ArgumentCaptor<Education> captor = ArgumentCaptor.forClass(Education.class);
             verify(educationRepository).save(captor.capture());
             assertThat(captor.getValue().getGraduationYear()).isEqualTo((short) 2020);
         }
 
         @Test
-        @DisplayName("shouldFallBackToStartYear_WhenEndYearNull")
-        void shouldFallBackToStartYear_WhenEndYearNull() {
+        @DisplayName("shouldStoreStartYearSeparately_WhenEndYearNull")
+        void shouldStoreStartYearSeparately_WhenEndYearNull() {
             // Arrange
             when(candidateRepository.findById(CANDIDATE_ID)).thenReturn(Optional.of(candidate));
             when(educationRepository.save(any(Education.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            // Act
+            // Act — endYear null: startYear persists in its own column (V29), not graduation_year
             candidateService.addEducation(CANDIDATE_ID, new EducationRequest("MBA", "IIM", null, 2018, null), ACTOR_ID);
 
             // Assert
             ArgumentCaptor<Education> captor = ArgumentCaptor.forClass(Education.class);
             verify(educationRepository).save(captor.capture());
-            assertThat(captor.getValue().getGraduationYear()).isEqualTo((short) 2018);
+            assertThat(captor.getValue().getStartYear()).isEqualTo((short) 2018);
+            assertThat(captor.getValue().getGraduationYear()).isNull();
         }
 
         @Test
