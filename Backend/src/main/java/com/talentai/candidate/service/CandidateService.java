@@ -200,8 +200,9 @@ public class CandidateService {
                 .candidateId(candidateId)
                 .degree(req.degree())
                 .institution(req.institution())
-                .graduationYear(req.endYear() != null ? req.endYear().shortValue()
-                        : (req.startYear() != null ? req.startYear().shortValue() : null))
+                .fieldOfStudy(req.fieldOfStudy())
+                .startYear(req.startYear() != null ? req.startYear().shortValue() : null)
+                .graduationYear(req.endYear() != null ? req.endYear().shortValue() : null)
                 .createdBy(actorUserId)
                 .isActive(true)
                 .build());
@@ -214,8 +215,9 @@ public class CandidateService {
                 .orElseThrow(() -> new ResourceNotFoundException("Education not found: " + educationId));
         e.setDegree(req.degree());
         e.setInstitution(req.institution());
-        e.setGraduationYear(req.endYear() != null ? req.endYear().shortValue()
-                : (req.startYear() != null ? req.startYear().shortValue() : null));
+        e.setFieldOfStudy(req.fieldOfStudy());
+        e.setStartYear(req.startYear() != null ? req.startYear().shortValue() : null);
+        e.setGraduationYear(req.endYear() != null ? req.endYear().shortValue() : null);
         e.setModifiedBy(actorUserId);
         return toEducation(educationRepository.save(e));
     }
@@ -226,10 +228,10 @@ public class CandidateService {
     }
 
     private EducationResponse toEducation(Education e) {
-        // fieldOfStudy and startYear have no column in the education table (V10);
-        // graduation_year maps to endYear. Returned as null to keep the UI shape.
+        Integer startYear = e.getStartYear() == null ? null : (int) (short) e.getStartYear();
         Integer endYear = e.getGraduationYear() == null ? null : (int) (short) e.getGraduationYear();
-        return new EducationResponse(e.getEducationId(), e.getDegree(), e.getInstitution(), null, null, endYear);
+        return new EducationResponse(e.getEducationId(), e.getDegree(), e.getInstitution(),
+                e.getFieldOfStudy(), startYear, endYear);
     }
 
     // --- Work experience ---

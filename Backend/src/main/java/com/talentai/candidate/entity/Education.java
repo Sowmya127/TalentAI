@@ -40,6 +40,12 @@ public class Education extends BaseAuditableEntity {
     @Column(name = "institution", length = 150)
     private String institution;
 
+    @Column(name = "field_of_study", length = 150)
+    private String fieldOfStudy;
+
+    @Column(name = "start_year")
+    private Short startYear;
+
     @Column(name = "graduation_year")
     private Short graduationYear;
 
