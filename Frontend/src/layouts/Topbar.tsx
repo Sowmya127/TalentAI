@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import {
   AppBar,
   Box,
+  ButtonBase,
   Divider,
   IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
+  Stack,
   Toolbar,
   Tooltip,
   Typography,
@@ -34,6 +36,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   const emailName = user?.email.split('@')[0] ?? ''
   const [firstName, lastName] = emailName.includes('.') ? emailName.split('.') : [emailName, '']
+  const displayName = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : (user?.email ?? '')
 
   return (
     <AppBar
@@ -60,11 +63,30 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             <NotificationsOutlinedIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Account">
-          <IconButton onClick={openMenu} sx={{ ml: 0.5 }} aria-label="Account menu">
-            <AppAvatar firstName={firstName} lastName={lastName} size={34} />
-          </IconButton>
-        </Tooltip>
+        <ButtonBase
+          onClick={openMenu}
+          aria-label="Account menu"
+          sx={{
+            ml: 0.5,
+            gap: 1.25,
+            pl: 0.5,
+            pr: { xs: 0.5, sm: 1.5 },
+            py: 0.5,
+            borderRadius: 999,
+            border: (theme) => `1px solid ${theme.palette.divider}`,
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <AppAvatar firstName={firstName} lastName={lastName} size={34} />
+          <Stack sx={{ display: { xs: 'none', sm: 'flex' }, textAlign: 'left' }}>
+            <Typography variant="body2" fontWeight={700} lineHeight={1.2} noWrap>
+              {displayName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" lineHeight={1.2} noWrap>
+              {roleLabel(user?.role ?? '')}
+            </Typography>
+          </Stack>
+        </ButtonBase>
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu} sx={{ mt: 1 }}>
           <Box sx={{ px: 2, py: 1, minWidth: 220 }}>
             <Typography variant="subtitle2" noWrap>

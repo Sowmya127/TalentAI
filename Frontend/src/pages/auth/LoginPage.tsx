@@ -42,7 +42,7 @@ export default function LoginPage() {
     <Stack spacing={3} component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Stack spacing={0.5}>
         <Typography variant="h5" fontWeight={700}>
-          Welcome back
+          Welcome
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Sign in to continue to your TalentAI workspace.

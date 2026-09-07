@@ -12,15 +12,18 @@ export function initialsFromFullName(name?: string | null): string {
   return (first + last).toUpperCase() || '?'
 }
 
+// Brand-aligned avatar backgrounds (navy / slate / amber-bronze family) so
+// every avatar stays on the cream/navy/amber theme. All are dark enough for
+// the light initials the Avatar renders on top.
 const AVATAR_PALETTE = [
-  '#4F46E5',
-  '#0EA5E9',
-  '#16A34A',
-  '#D97706',
-  '#DB2777',
-  '#7C3AED',
-  '#0891B2',
-  '#CA8A04',
+  '#14213D', // oxford navy
+  '#233457', // navy 700
+  '#33415C', // navy 600
+  '#5C6784', // slate
+  '#4A5B7C', // slate-navy
+  '#E08E00', // amber dark
+  '#B45309', // bronze
+  '#8A6D3B', // muted gold
 ]
 
 export function colorFromString(value: string): string {
