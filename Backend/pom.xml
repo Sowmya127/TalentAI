@@ -25,6 +25,18 @@
         <jjwt.version>0.12.6</jjwt.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <springdoc.version>2.6.0</springdoc.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <sonar.maven.plugin.version>4.0.0.4121</sonar.maven.plugin.version>
+
+        <!-- SonarQube / SonarCloud analysis settings. Host URL + auth token are
+             supplied at run time (-Dsonar.host.url / -Dsonar.token or env vars);
+             an organization is only needed for SonarCloud. -->
+        <sonar.projectKey>TalentAI</sonar.projectKey>
+        <sonar.projectName>TalentAI Backend</sonar.projectName>
+        <sonar.java.source>17</sonar.java.source>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.junit.reportPaths>${project.build.directory}/surefire-reports,${project.build.directory}/failsafe-reports</sonar.junit.reportPaths>
+        <sonar.exclusions>**/TalentAiApplication.java,**/dto/**,**/entity/**</sonar.exclusions>
     </properties>
 
     <dependencies>
@@ -182,6 +194,66 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <!-- JaCoCo: instruments tests and writes target/site/jacoco/jacoco.xml
+                 which SonarQube reads for coverage. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- SonarQube / SonarCloud scanner: run `mvn verify sonar:sonar`. -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.plugin.version}</version>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Opt-in integration-test run (needs Docker for Testcontainers, or a
+             local MySQL via -Dit.jdbc.url / IT_JDBC_URL). Enables JaCoCo to also
+             cover the *IT suite. Default builds run unit tests only. -->
+        <profile>
+            <id>it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
