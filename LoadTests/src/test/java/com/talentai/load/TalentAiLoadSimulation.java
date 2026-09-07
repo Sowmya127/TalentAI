@@ -88,6 +88,26 @@ public class TalentAiLoadSimulation extends Simulation {
                     // 201 created, or 409 if a rerun collides — both are non-error for the endpoint.
                     .check(status().in(201, 409)));
 
+    /** A realistic authenticated session, used by the closed-model profiles
+     *  ("number of concurrent users") and the break-point ramp. */
+    private final ScenarioBuilder userJourney = scenario("User journey")
+            .exec(http("POST /auth/login")
+                    .post("/api/v1/auth/login")
+                    .body(StringBody("{\"email\":\"" + LOGIN_EMAIL + "\",\"password\":\"" + LOGIN_PASSWORD + "\"}"))
+                    .check(status().is(200))
+                    .check(jsonPath("$.token").saveAs("token")))
+            .exec(http("GET /jobs (published)")
+                    .get("/api/v1/jobs?status=Published&page=1&size=10")
+                    .header("Authorization", "Bearer #{token}")
+                    .check(status().is(200)))
+            .exec(http("GET /dashboard (summary)")
+                    .get("/api/v1/dashboard")
+                    .header("Authorization", "Bearer #{token}")
+                    .check(status().is(200)))
+            .exec(http("GET /public/jobs")
+                    .get("/api/v1/public/jobs?page=1&size=10")
+                    .check(status().is(200)));
+
     // --- Load profiles ---------------------------------------------------
 
     private List<PopulationBuilder> populations() {
@@ -115,6 +135,15 @@ public class TalentAiLoadSimulation extends Simulation {
                 return List.of(
                         publicBrowse.injectOpen(constantUsersPerSec(perSec).during(Duration.ofSeconds(DURATION * 3L))),
                         authReads.injectOpen(constantUsersPerSec(Math.max(1.0, perSec / 2)).during(Duration.ofSeconds(DURATION * 3L))));
+            case "concurrent":
+                // Hold exactly USERS concurrent users for DURATION (after a short ramp-in).
+                return List.of(userJourney.injectClosed(
+                        rampConcurrentUsers(0).to(USERS).during(Duration.ofSeconds(RAMP)),
+                        constantConcurrentUsers(USERS).during(Duration.ofSeconds(DURATION))));
+            case "breakpoint":
+                // Gradually ramp concurrency 1 -> USERS over DURATION to reveal the break point.
+                return List.of(userJourney.injectClosed(
+                        rampConcurrentUsers(1).to(USERS).during(Duration.ofSeconds(DURATION))));
             case "smoke":
             default:
                 return List.of(
@@ -125,10 +154,13 @@ public class TalentAiLoadSimulation extends Simulation {
     }
 
     {
-        setUp(populations())
-                .protocols(httpProtocol)
-                .assertions(
-                        global().responseTime().percentile(95.0).lt(2000),
-                        global().failedRequests().percent().lt(1.0));
+        var setup = setUp(populations()).protocols(httpProtocol);
+        // The break-point profile is meant to push the system until it degrades,
+        // so SLA assertions (which would fail by design) are not applied there.
+        if (!"breakpoint".equals(PROFILE)) {
+            setup.assertions(
+                    global().responseTime().percentile(95.0).lt(2000),
+                    global().failedRequests().percent().lt(1.0));
+        }
     }
 }

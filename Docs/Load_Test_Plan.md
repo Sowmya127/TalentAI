@@ -31,6 +31,8 @@ Selected with `-Dprofile=<name>`; scale with `-Dusers`, `-Dramp`, `-Dduration`.
 | **stress** | Find the breaking point | Ramp to ~3× `users` and observe where latency/errors climb |
 | **spike** | Sudden burst resilience | Idle, then a large batch of users at once |
 | **soak** | Endurance (leaks, pool exhaustion) | Steady arrival rate held for a long `duration` |
+| **concurrent** | Hold a fixed **number of concurrent users** for a fixed **duration** (you specify both) | Closed model: ramp in, then hold `-Dusers` concurrent for `-Dduration` |
+| **breakpoint** | **Gradually increasing** load to find the break point | Closed model: ramp concurrency `1 → -Dusers` over `-Dduration`; watch where p95/errors knee (SLA assertions disabled here) |
 
 ## 4. Metrics & pass/fail
 Captured per request and globally (Gatling HTML report):
@@ -54,6 +56,8 @@ mvn gatling:test -Dprofile=load  -Dusers=50 -Dramp=20 -Dduration=60
 mvn gatling:test -Dprofile=stress -Dusers=100
 mvn gatling:test -Dprofile=spike -Dusers=80
 mvn gatling:test -Dprofile=soak  -Dusers=40 -Dduration=300
+mvn gatling:test -Dprofile=concurrent -Dusers=100 -Dduration=120   # hold 100 concurrent users for 120s
+mvn gatling:test -Dprofile=breakpoint -Dusers=500 -Dduration=180   # ramp 1..500 to find the break point
 ```
 Options: `-DbaseUrl` (default `http://localhost:8080`), `-DloginEmail` / `-DloginPassword`.
 HTML report: `LoadTests/target/gatling/<simulation>-<timestamp>/index.html`.
@@ -69,3 +73,17 @@ Assertions — p95 < 2000ms: PASS · failures < 1%: PASS → BUILD SUCCESS
 Covered: `GET /public/jobs` (x2 pages), `POST /auth/login`, `GET /jobs`, `GET /dashboard`, `POST /auth/register`.
 
 > Note: candidate registration and (at scale) higher profiles **write rows** to the database via `POST /auth/register`. Run heavier profiles against a disposable/test database, not production.
+
+## 7. Regression comparison (this run vs the previous run)
+`LoadTests/perf-report.ps1` reads a run's `js/global_stats.json`, compares it to a saved baseline, and writes an HTML report ([Docs/load-test-comparison.html](load-test-comparison.html)) with per-metric deltas and a verdict.
+
+```powershell
+# 1) capture a known-good run as the baseline ("previous run")
+powershell -File D:\TalentAI\LoadTests\perf-report.ps1 -SaveBaseline
+# 2) later, after another run, compare against it
+powershell -File D:\TalentAI\LoadTests\perf-report.ps1
+```
+**Verdict = DEGRADED** if, vs baseline, **p95** or **mean** rose > 10%, **throughput** dropped > 10%, or the **error rate** rose by > 1 point. Otherwise **NO DEGRADATION**. The baseline lives in `LoadTests/baseline/global_stats.json`; re-run `-SaveBaseline` to move it forward after an intended change.
+
+### Latest comparison (2026-09-07)
+Two `concurrent -Dusers=8 -Dduration=15` runs — **NO DEGRADATION**: p95 259 → 249 ms (−3.9%), mean 71 → 76 ms (+7%), throughput 94.3 → 88 req/s (−6.7%), errors 0% — all within thresholds.
