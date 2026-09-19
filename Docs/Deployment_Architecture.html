@@ -1,0 +1,877 @@
+<title>TalentAI Deployment Architecture</title>
+<meta name="description" content="As-built deployment architecture for the TalentAI recruitment platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F4F6FA;
+    --surface: #FFFFFF;
+    --surface-2: #EDF1F7;
+    --ink: #16202B;
+    --ink-2: #4C5A6C;
+    --line: #D7DFEA;
+    --line-strong: #C2CDDB;
+    --accent: #1F5FB2;
+    --accent-ink: #0E3D7A;
+    --accent-soft: #E3ECF8;
+    --ok: #1E7A45;
+    --ok-soft: #E1F0E7;
+    --warn: #A85B0A;
+    --warn-soft: #F6EADA;
+    --sheet: #EEF2F7;
+    --sheet-line: #D3DCE7;
+    --code-bg: #0E1621;
+    --code-ink: #D5DEEA;
+    --code-line: #223040;
+    --shadow: 0 1px 2px rgba(20,32,45,.05), 0 8px 24px -12px rgba(20,32,45,.18);
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0D131A;
+      --surface: #141C25;
+      --surface-2: #1B2530;
+      --ink: #E7ECF3;
+      --ink-2: #9BA9B9;
+      --line: #29333F;
+      --line-strong: #37434F;
+      --accent: #5E9CEA;
+      --accent-ink: #AECCF6;
+      --accent-soft: #17273B;
+      --ok: #52B67B;
+      --ok-soft: #14261C;
+      --warn: #E0954A;
+      --warn-soft: #2A2113;
+      --sheet: #EEF2F7;
+      --sheet-line: #D3DCE7;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A;
+    --surface: #141C25;
+    --surface-2: #1B2530;
+    --ink: #E7ECF3;
+    --ink-2: #9BA9B9;
+    --line: #29333F;
+    --line-strong: #37434F;
+    --accent: #5E9CEA;
+    --accent-ink: #AECCF6;
+    --accent-soft: #17273B;
+    --ok: #52B67B;
+    --ok-soft: #14261C;
+    --warn: #E0954A;
+    --warn-soft: #2A2113;
+    --sheet: #EEF2F7;
+    --sheet-line: #D3DCE7;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 56px) clamp(16px, 4vw, 44px) 80px;
+    gap: 0;
+  }
+  @media (min-width: 1040px) {
+    .page { grid-template-columns: 232px minmax(0, 1fr); column-gap: 52px; }
+    .masthead { grid-column: 1 / -1; }
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, var(--surface), var(--surface));
+    box-shadow: var(--shadow);
+    padding: clamp(22px, 3.5vw, 40px);
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 26px 26px;
+    opacity: .25;
+    -webkit-mask-image: linear-gradient(115deg, transparent 42%, #000 100%);
+    mask-image: linear-gradient(115deg, transparent 42%, #000 100%);
+    pointer-events: none;
+  }
+  .masthead > * { position: relative; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 46px);
+    line-height: 1.06;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    max-width: 18ch;
+  }
+  .lede {
+    font-size: clamp(15px, 1.5vw, 17px);
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 22px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- TOC ---------- */
+  nav.toc {
+    align-self: start;
+    display: none;
+  }
+  @media (min-width: 1040px) {
+    nav.toc { display: block; position: sticky; top: 28px; }
+  }
+  nav.toc .toc-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin: 0 0 12px;
+    padding-left: 14px;
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc li { counter-increment: toc; }
+  nav.toc a {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0 5px 14px;
+    border-left: 2px solid var(--line);
+    color: var(--ink-2);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: color .15s, border-color .15s;
+  }
+  nav.toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--line-strong);
+    padding-top: 2px;
+  }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+
+  /* ---------- Content ---------- */
+  main { min-width: 0; }
+  section { margin-bottom: 46px; scroll-margin-top: 24px; }
+  h2 {
+    font-size: clamp(20px, 2.4vw, 26px);
+    letter-spacing: -.015em;
+    font-weight: 700;
+    margin: 0 0 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .section-sub { color: var(--ink-2); margin: 0 0 20px; max-width: 68ch; }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 26px 0 10px;
+    letter-spacing: -.01em;
+  }
+  p { max-width: 72ch; }
+  a { color: var(--accent); }
+
+  /* ---------- As-built callout ---------- */
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+  }
+  .callout h3 { margin-top: 0; display: flex; align-items: center; gap: 9px; }
+  .callout ul { margin: 0; padding-left: 20px; }
+  .callout li { margin: 7px 0; max-width: 72ch; }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: 2px 8px;
+    border-radius: 5px;
+    vertical-align: middle;
+  }
+  .tag.built { background: var(--ok-soft); color: var(--ok); border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); }
+  .tag.opt { background: var(--warn-soft); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 34%, transparent); }
+
+  /* ---------- Figure / diagram sheet ---------- */
+  figure {
+    margin: 0 0 8px;
+    border: 1px solid var(--sheet-line);
+    border-radius: 12px;
+    background: var(--sheet);
+    background-image:
+      linear-gradient(rgba(31,95,178,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31,95,178,.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  figure .mermaid {
+    min-width: 520px;
+    padding: 26px 22px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+  }
+  figcaption {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    padding: 4px 4px 0;
+    margin-bottom: 26px;
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    background: var(--surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 480px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    position: sticky;
+    top: 0;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+  td.mono, th.mono { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  td code, p code, li code {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 5px;
+    color: var(--accent-ink);
+    white-space: nowrap;
+  }
+  .envvar { color: var(--accent-ink); font-weight: 500; }
+
+  /* ---------- Code blocks (committed dark) ---------- */
+  .code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .code-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--code-line);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #8FA1B6;
+  }
+  .code-head .dot { width: 9px; height: 9px; border-radius: 50%; background: #35465A; }
+  .code pre {
+    margin: 0;
+    padding: 18px 16px;
+    overflow-x: auto;
+    color: var(--code-ink);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    tab-size: 2;
+  }
+
+  /* ---------- Feature grid (node cards) ---------- */
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .node-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 16px 17px;
+    box-shadow: var(--shadow);
+  }
+  .node-card .kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  .node-card h3 { margin: 0 0 6px; font-size: 15px; }
+  .node-card p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+
+  ul.clean { padding-left: 20px; }
+  ul.clean li { margin: 9px 0; max-width: 72ch; }
+  ul.clean li strong { color: var(--ink); }
+
+  footer {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Solution Architecture &middot; As-Built</p>
+    <h1>TalentAI Deployment Architecture</h1>
+    <p class="lede">The deployment view of the TalentAI recruitment platform &mdash; every node, protocol, and
+      environment variable reflecting the code as it actually runs today, not a conceptual target state.</p>
+    <div class="chips">
+      <span class="chip"><b>React 19</b> &middot; Vite &middot; MUI</span>
+      <span class="chip"><b>Spring Boot 3.3.5</b> &middot; JVM 17</span>
+      <span class="chip"><b>MySQL 8.4</b> &middot; Flyway V1&ndash;V34</span>
+      <span class="chip">Context path <b>/api</b> &middot; :8080</span>
+      <span class="chip">Stateless <b>JWT</b></span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="toc-title">Contents</p>
+    <ol>
+      <li><a href="#accuracy">As-built accuracy notes</a></li>
+      <li><a href="#prod">Production deployment</a></li>
+      <li><a href="#placement">Component placement</a></li>
+      <li><a href="#protocols">Communication protocols</a></li>
+      <li><a href="#nodes">Node descriptions</a></li>
+      <li><a href="#tech">Technology mapping</a></li>
+      <li><a href="#env">Environment variables</a></li>
+      <li><a href="#environments">Dev / Test / Prod</a></li>
+      <li><a href="#flows">Auth &amp; approval flows</a></li>
+      <li><a href="#cloud">Optional cloud version</a></li>
+      <li><a href="#alt">PlantUML &amp; ASCII</a></li>
+      <li><a href="#security">Security &amp; scalability</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="accuracy">
+      <div class="callout">
+        <h3>As-built vs. brief</h3>
+        <p style="margin-top:0;color:var(--ink-2)">This document was reconciled against the running code. A few points
+          where reality differs from a generic assumption:</p>
+        <ul>
+          <li>Runtime is <strong>Java 17</strong> (<code>pom.xml</code>), Spring Boot <strong>3.3.5</strong>,
+            MySQL <strong>8.4</strong>. The API serves under context path <code>/api</code>, controllers under
+            <code>/v1/**</code>, default port <code>8080</code>.</li>
+          <li><strong>Notifications are in-app</strong> <span class="tag built">as-built</span> &mdash; rows in the
+            <code>notification</code> table. An SMTP server is configured via env vars but <em>not yet wired</em>
+            (no mail starter on the classpath), so it appears as <span class="tag opt">optional</span> throughout.</li>
+          <li><strong>AI Matching is an in-process heuristic</strong> <span class="tag built">as-built</span>.
+            <code>AI_PROVIDER_BASE_URL</code> / <code>OPENAI_API_KEY</code> exist as env vars but are currently unused.</li>
+          <li><strong>Nginx</strong> terminates TLS and serves the React build in Production; in Development the
+            frontend runs on the <strong>Vite dev server (:4200)</strong> and calls the backend directly.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="prod">
+      <h2><span class="num">01</span> Production deployment</h2>
+      <p class="section-sub">A two-tier deployable &mdash; a static SPA and a stateless API &mdash; over a relational
+        store, with resume files on a disk volume and in-app notifications persisted in MySQL.</p>
+      <figure>
+<pre class="mermaid">
+flowchart TB
+    subgraph CLIENT["Client Device"]
+        BROWSER["Web Browser<br/>React SPA runtime"]
+    end
+    NET(["Internet · HTTPS 443"])
+    subgraph EDGE["Node: Reverse Proxy — Nginx (TLS 443)"]
+        STATIC["React Frontend<br/>static build: React 19, TS, MUI, Axios"]
+        PROXY["Reverse proxy<br/>/api → app:8080"]
+    end
+    subgraph APP["Node: Application Server — Spring Boot JAR (JVM 17, :8080, /api)"]
+        REST["REST API — @RestController /v1/**"]
+        SEC["Auth — Spring Security + JwtAuthenticationFilter + @PreAuthorize"]
+        SVC["Business Services<br/>Candidate · Recruiter · Hiring Mgr · Interviewer · HR · Admin ·<br/>Auth · Registration-Approval · Company · AI Match (heuristic) ·<br/>Interview · Offer · Job · Application · Notification · Reporting · Audit"]
+        REPO["Repositories — Spring Data JPA"]
+        HIB["Hibernate ORM"]
+        POOL["HikariCP pool"]
+        FLY["Flyway V1–V34 (on boot)"]
+        ACT["Actuator /api/actuator"]
+    end
+    subgraph DATA["Node: Database Server"]
+        MYSQL[("MySQL 8.4<br/>schema: talentai")]
+    end
+    subgraph FILES["Node: File Storage"]
+        RESUMES["Resume uploads<br/>FILE_UPLOAD_PATH"]
+    end
+    SMTP["SMTP / Email — optional"]
+    MON["Monitoring — optional"]
+
+    BROWSER -->|HTTPS 443| NET
+    NET -->|HTTPS 443| EDGE
+    STATIC -.->|assets| BROWSER
+    PROXY -->|HTTP 8080 · REST/JSON · Bearer JWT| REST
+    REST --> SEC --> SVC --> REPO --> HIB --> POOL
+    POOL -->|JDBC 3306 SSL| MYSQL
+    FLY -->|JDBC on boot| MYSQL
+    SVC -->|file I/O| RESUMES
+    SVC -. SMTP 587 planned .-> SMTP
+    MON -. scrape .-> ACT
+</pre>
+      </figure>
+      <figcaption><b>Fig. 1</b> &mdash; Production topology. Solid edges are wired today; dashed edges are optional/planned.</figcaption>
+
+      <h3>Deployment explanation</h3>
+      <p>In Production, <strong>Nginx</strong> terminates TLS, serves the compiled React bundle, and reverse-proxies
+        <code>/api/**</code> to the Spring Boot JAR &mdash; so the browser sees a single origin and no CORS is needed.
+        The <strong>Spring Boot</strong> process is a stateless executable JAR: on startup <strong>Flyway</strong>
+        brings the schema to V34 and Hibernate validates the mapping (<code>ddl-auto: validate</code> &mdash; the app
+        never alters schema). Requests pass through the <strong>JwtAuthenticationFilter</strong>, then
+        <code>@PreAuthorize</code> role checks, into the business services, through Spring Data JPA / Hibernate, and out
+        via the <strong>HikariCP</strong> pool over JDBC to MySQL. Because the API holds no session state, it scales
+        horizontally behind the proxy.</p>
+    </section>
+
+    <section id="placement">
+      <h2><span class="num">02</span> Component placement</h2>
+      <p class="section-sub">Which artifact lives on which node.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Node</th><th>Artifact</th></tr></thead>
+          <tbody>
+            <tr><td>React SPA (all role UIs)</td><td>Nginx (static) / browser</td><td class="mono">dist/ bundle</td></tr>
+            <tr><td>REST, Security/JWT, services, JPA, Hibernate, Hikari, Flyway, Actuator</td><td>Application Server</td><td class="mono">talentai-backend-*.jar</td></tr>
+            <tr><td>Users, roles, candidates, jobs, applications, interviews, offers, notifications, audit, registration requests, company, approval history</td><td>Database Server</td><td class="mono">MySQL schema talentai</td></tr>
+            <tr><td>Resume files</td><td>File Storage</td><td class="mono">volume @ FILE_UPLOAD_PATH</td></tr>
+            <tr><td>In-app notifications</td><td>Database Server</td><td class="mono">notification table</td></tr>
+            <tr><td>Email delivery <span class="tag opt">optional</span></td><td>SMTP node</td><td>&mdash;</td></tr>
+            <tr><td>Metrics / health</td><td>App Server (exposed) → Monitoring (scrapes)</td><td class="mono">Actuator</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="protocols">
+      <h2><span class="num">03</span> Communication protocols</h2>
+      <p class="section-sub">Every hop, its protocol and port.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>From → To</th><th class="mono">Protocol / Port</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Browser → Nginx</td><td class="mono">HTTPS / 443</td><td>TLS terminated at proxy</td></tr>
+            <tr><td>Nginx → React static</td><td class="mono">HTTPS</td><td>SPA assets</td></tr>
+            <tr><td>Nginx → Spring Boot</td><td class="mono">HTTP / 8080</td><td><code>location /api</code>, internal network</td></tr>
+            <tr><td>React (Axios) → REST API</td><td class="mono">HTTPS / JSON</td><td><code>Authorization: Bearer &lt;JWT&gt;</code></td></tr>
+            <tr><td>Repository → MySQL</td><td class="mono">JDBC / 3306</td><td>via HikariCP, <code>useSSL</code> per env</td></tr>
+            <tr><td>Flyway → MySQL</td><td class="mono">JDBC / 3306</td><td>migrate + validate on boot</td></tr>
+            <tr><td>Services → File storage</td><td class="mono">Filesystem I/O</td><td>resume read/write</td></tr>
+            <tr><td>Services → SMTP <span class="tag opt">optional</span></td><td class="mono">SMTP+STARTTLS / 587</td><td>planned</td></tr>
+            <tr><td>Monitoring → Actuator</td><td class="mono">HTTP</td><td><code>/api/actuator/metrics</code>, <code>/health</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="nodes">
+      <h2><span class="num">04</span> Node descriptions</h2>
+      <p class="section-sub">The role each deployment node plays and its runtime.</p>
+      <div class="grid">
+        <div class="node-card"><p class="kicker">Client</p><h3>Browser</h3><p>Runs the React SPA and holds the JWT. Any modern browser.</p></div>
+        <div class="node-card"><p class="kicker">Edge</p><h3>Nginx reverse proxy</h3><p>TLS termination, static hosting, <code>/api</code> proxy, gzip. Runtime: Nginx.</p></div>
+        <div class="node-card"><p class="kicker">Compute</p><h3>Application Server</h3><p>Hosts the Spring Boot JAR: REST, security, services, ORM, migrations. Runtime: JVM 17.</p></div>
+        <div class="node-card"><p class="kicker">Data</p><h3>Database Server</h3><p>Persistent relational store and connection-pool target. Runtime: MySQL 8.4.</p></div>
+        <div class="node-card"><p class="kicker">Storage</p><h3>File Storage</h3><p>Resume upload persistence. Disk volume / mounted path.</p></div>
+        <div class="node-card"><p class="kicker">Optional</p><h3>SMTP Server</h3><p>Outbound transactional email when enabled. SMTP relay.</p></div>
+        <div class="node-card"><p class="kicker">Optional</p><h3>Monitoring</h3><p>Health / metrics collection. Actuator + Prometheus/Grafana.</p></div>
+      </div>
+    </section>
+
+    <section id="tech">
+      <h2><span class="num">05</span> Technology mapping</h2>
+      <p class="section-sub">Layer by layer, technology to node.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th><th>Node</th></tr></thead>
+          <tbody>
+            <tr><td>Presentation</td><td>React 19, TypeScript, Material UI, Axios, Vite build</td><td>Nginx / Browser</td></tr>
+            <tr><td>API</td><td>Spring Web (REST), springdoc-openapi</td><td>App Server</td></tr>
+            <tr><td>Security</td><td>Spring Security, JWT (jjwt HS), method security</td><td>App Server</td></tr>
+            <tr><td>Business</td><td>Spring <code>@Service</code> modules (all domains)</td><td>App Server</td></tr>
+            <tr><td>Persistence</td><td>Spring Data JPA, Hibernate, HikariCP</td><td>App Server → DB</td></tr>
+            <tr><td>Migration</td><td>Flyway (V1–V34)</td><td>App Server → DB</td></tr>
+            <tr><td>Database</td><td>MySQL 8.4 (InnoDB, utf8mb4)</td><td>DB Server</td></tr>
+            <tr><td>Files</td><td>Java NIO filesystem storage</td><td>File Storage</td></tr>
+            <tr><td>Observability</td><td>Spring Boot Actuator</td><td>App Server</td></tr>
+            <tr><td>Build / CI</td><td>Maven, Git, GitHub Actions</td><td>Dev / CI</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="env">
+      <h2><span class="num">06</span> Environment-variable mapping</h2>
+      <p class="section-sub">Configuration is entirely env-driven &mdash; <code>application.yml</code> reads
+        <code>${VAR}</code>, nothing is hard-coded, and only <code>application-{profile}.yml</code> differs. Secrets
+        never enter git: Dev uses a gitignored <code>Backend/.env</code>; Prod uses the platform secret manager.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Dev</th><th>Test</th><th>Production</th></tr></thead>
+          <tbody>
+            <tr><td class="mono envvar">SPRING_PROFILES_ACTIVE</td><td class="mono">dev</td><td class="mono">test</td><td class="mono">prod</td></tr>
+            <tr><td class="mono envvar">DB_HOST / DB_PORT / DB_NAME</td><td class="mono">localhost / 3306 / talentai</td><td class="mono">Testcontainers (dynamic)</td><td class="mono">managed host / 3306 / talentai</td></tr>
+            <tr><td class="mono envvar">DB_USERNAME / DB_PASSWORD</td><td>dev creds (.env)</td><td>container creds</td><td><strong>secret manager</strong></td></tr>
+            <tr><td class="mono envvar">DB_USE_SSL</td><td class="mono">false</td><td class="mono">false</td><td class="mono">true</td></tr>
+            <tr><td class="mono envvar">DB_POOL_MAX_SIZE / MIN_IDLE</td><td class="mono">10 / 2</td><td class="mono">small</td><td class="mono">tuned (20+)</td></tr>
+            <tr><td class="mono envvar">JWT_SECRET</td><td>dev-only value</td><td>test value</td><td><strong>secret manager</strong>, ≥256-bit</td></tr>
+            <tr><td class="mono envvar">JWT_EXPIRATION_MS / REFRESH</td><td class="mono">3600000 / 86400000</td><td class="mono">short</td><td>policy-driven</td></tr>
+            <tr><td class="mono envvar">FILE_UPLOAD_PATH / MAX_SIZE_MB</td><td class="mono">./uploads/resumes / 10</td><td>temp dir</td><td>persistent volume</td></tr>
+            <tr><td class="mono envvar">MAIL_HOST / PORT / USER / PASS <span class="tag opt">opt</span></td><td>unset</td><td>unset</td><td>SMTP relay + secret</td></tr>
+            <tr><td class="mono envvar">AI_PROVIDER_BASE_URL / OPENAI_API_KEY <span class="tag opt">opt</span></td><td>unset (heuristic)</td><td>unset</td><td>set only if external AI enabled</td></tr>
+            <tr><td class="mono envvar">CORS_ALLOWED_ORIGINS</td><td class="mono">http://localhost:4200</td><td>test origin</td><td>prod domain(s)</td></tr>
+            <tr><td class="mono envvar">SERVER_PORT</td><td class="mono">8080</td><td class="mono">8080</td><td class="mono">8080 (behind proxy)</td></tr>
+            <tr><td class="mono envvar">SWAGGER_UI_ENABLED</td><td class="mono">true</td><td class="mono">true</td><td class="mono">false</td></tr>
+            <tr><td class="mono envvar">LOG_LEVEL / LOG_LEVEL_APP</td><td class="mono">INFO</td><td class="mono">WARN / INFO</td><td class="mono">INFO / WARN</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="environments">
+      <h2><span class="num">07</span> Deployment environments</h2>
+      <p class="section-sub">Same artifact, three topologies. Config source: Dev → <code>Backend/.env</code>;
+        Test → <code>@DynamicPropertySource</code> (Testcontainers) / <code>IT_JDBC_URL</code>;
+        Prod → injected environment / secret manager.</p>
+      <figure>
+<pre class="mermaid">
+flowchart LR
+    subgraph DEV["Development · local workstation"]
+        DV1["Vite dev server :4200"]
+        DV2["Spring Boot :8080"]
+        DV3[("MySQL :3306 local")]
+        DV4["./uploads/resumes"]
+        DV1 -->|proxy /api| DV2 --> DV3
+        DV2 --> DV4
+    end
+    subgraph TEST["Testing / CI"]
+        TS1["JUnit · MockMvc · Selenium · Gatling"]
+        TS2["Spring Boot test context"]
+        TS3[("MySQL Testcontainer")]
+        TS1 --> TS2 --> TS3
+    end
+    subgraph PROD["Production"]
+        PR1["Nginx TLS :443"]
+        PR2["Spring Boot JAR :8080"]
+        PR3[("MySQL 8.4 SSL")]
+        PR4["Resume volume"]
+        PR5["SMTP optional"]
+        PR6["Monitoring"]
+        PR1 --> PR2 --> PR3
+        PR2 --> PR4
+        PR2 -. optional .-> PR5
+        PR6 -. scrape .-> PR2
+    end
+</pre>
+      </figure>
+      <figcaption><b>Fig. 2</b> &mdash; The three environments and their config sources.</figcaption>
+    </section>
+
+    <section id="flows">
+      <h2><span class="num">08</span> Auth &amp; approval flows</h2>
+      <p class="section-sub">Two runtime behaviours the deployment must support: stateless JWT auth, and the
+        self-registration + admin-approval gate.</p>
+
+      <figure>
+<pre class="mermaid">
+sequenceDiagram
+    participant B as Browser (React)
+    participant P as Nginx
+    participant S as Spring Security / Auth
+    participant DB as MySQL
+    B->>P: POST /api/v1/auth/login {email, password} (HTTPS)
+    P->>S: proxy
+    S->>DB: load user + roles
+    S-->>B: 200 { token (JWT), role, roles, expiresIn }
+    Note over B: store JWT
+    B->>P: GET /api/v1/... (Authorization: Bearer JWT)
+    P->>S: proxy
+    S->>S: JwtAuthenticationFilter validates signature + expiry
+    S->>S: @PreAuthorize role check
+    S-->>B: 200 resource · 401 if bad/expired · 403 if role denied
+</pre>
+      </figure>
+      <figcaption><b>Fig. 3</b> &mdash; Stateless JWT authentication.</figcaption>
+
+      <figure>
+<pre class="mermaid">
+flowchart TD
+    R["Recruiter / HM / Interviewer / HR registers<br/>POST /api/v1/auth/register"] --> P["Account PENDING_APPROVAL<br/>role not yet assigned"]
+    P --> N["In-app notification to Admins"]
+    P --> L1["Login → 403 REGISTRATION_PENDING"]
+    N --> A["Admin queue<br/>GET /api/v1/admin/registration-requests"]
+    A --> D{Decision}
+    D -->|Approve| AC["Active + role assigned<br/>approval_history: Approved"]
+    D -->|Reject| RJ["REJECTED + reason<br/>approval_history: Rejected"]
+    AC --> OK["Login allowed"]
+    RJ --> NO["Login → 403 REGISTRATION_REJECTED + reason"]
+    C["Candidate registers"] --> CA["ACTIVE immediately → login allowed"]
+</pre>
+      </figure>
+      <figcaption><b>Fig. 4</b> &mdash; Registration-approval workflow. System Admin is never self-registerable (server-enforced).</figcaption>
+    </section>
+
+    <section id="cloud">
+      <h2><span class="num">09</span> Optional cloud deployment</h2>
+      <p class="section-sub">A provider-neutral cloud target: horizontally-scaled stateless app tier behind a load
+        balancer, managed MySQL, object storage for resumes.</p>
+      <figure>
+<pre class="mermaid">
+flowchart TB
+    U["Users"] -->|HTTPS| CDN["CDN / static hosting<br/>React build"]
+    U -->|HTTPS| LB["Load Balancer · TLS"]
+    LB --> APP1["App instance 1<br/>Spring Boot JAR"]
+    LB --> APP2["App instance 2<br/>Spring Boot JAR"]
+    APP1 --> RDS[("Managed MySQL<br/>primary + read replica")]
+    APP2 --> RDS
+    APP1 --> OBJ["Object Storage<br/>resumes"]
+    APP2 --> OBJ
+    APP1 -. optional .-> MAIL["Managed Email"]
+    APP1 --> LOGS["Central Logging"]
+    MONS["Monitoring / APM"] -. scrape .-> APP1
+    MONS -. scrape .-> APP2
+    SEC["Secret Manager"] -. inject env .-> APP1
+    SEC -. inject env .-> APP2
+</pre>
+      </figure>
+      <figcaption><b>Fig. 5</b> &mdash; Provider-neutral cloud topology.</figcaption>
+      <p>Cloud mapping: Load Balancer (ALB / App Gateway / GCLB) &middot; App tier (ECS / EKS / App Service / Cloud Run,
+        2+ stateless instances) &middot; Managed MySQL (RDS / Cloud SQL / Azure MySQL) &middot; Object Storage
+        (S3 / Blob / GCS) for resumes &middot; Managed Email (SES / SendGrid) &middot; Monitoring
+        (CloudWatch / Grafana / App Insights) &middot; Secret Manager for <code>JWT_SECRET</code>, DB and SMTP creds.</p>
+    </section>
+
+    <section id="alt">
+      <h2><span class="num">10</span> PlantUML &amp; ASCII</h2>
+      <p class="section-sub">The same production topology in two portable, text-only forms &mdash; for wikis and tools
+        that render PlantUML, or a plain terminal.</p>
+
+      <h3>PlantUML &mdash; production</h3>
+      <div class="code">
+        <div class="code-head"><span class="dot"></span> deployment.puml</div>
+<pre>@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+node "Client Device" {
+  artifact "Web Browser\n(React SPA)" as Browser
+}
+cloud "Internet\n(HTTPS 443)" as Net
+
+node "Reverse Proxy (Nginx, TLS)" {
+  artifact "React Frontend (static)" as FE
+  component "Reverse proxy /api" as Proxy
+}
+
+node "Application Server (JVM 17)" {
+  component "REST API /v1/**" as REST
+  component "Spring Security + JWT filter" as Sec
+  component "Business Services (all modules)" as Svc
+  component "Spring Data JPA / Hibernate" as JPA
+  component "HikariCP pool" as Pool
+  component "Flyway (V1-V34)" as Flyway
+  component "Actuator / Swagger" as Ops
+}
+
+database "MySQL 8.4\nschema talentai" as DB
+folder "File Storage\n(resumes)" as Files
+queue "SMTP (optional)" as Smtp
+node "Monitoring" as Mon
+
+Browser --> Net : HTTPS
+Net --> Proxy : HTTPS 443
+FE ..> Browser : assets
+Proxy --> REST : HTTP 8080 (Bearer JWT)
+REST --> Sec
+Sec --> Svc
+Svc --> JPA
+JPA --> Pool
+Pool --> DB : JDBC 3306 (SSL)
+Flyway --> DB : JDBC (boot)
+Svc --> Files : file I/O
+Svc ..> Smtp : SMTP 587 (planned)
+Mon ..> Ops : scrape
+@enduml</pre>
+      </div>
+
+      <h3>PlantUML &mdash; optional cloud</h3>
+      <div class="code">
+        <div class="code-head"><span class="dot"></span> deployment-cloud.puml</div>
+<pre>@startuml
+skinparam componentStyle rectangle
+actor Users
+cloud "CDN (React build)" as CDN
+node "Load Balancer (TLS)" as LB
+node "App Instance 1" as A1
+node "App Instance 2" as A2
+database "Managed MySQL\n(primary + replica)" as RDS
+folder "Object Storage (resumes)" as S3
+queue "Managed Email (optional)" as SES
+node "Monitoring/APM" as Mon
+node "Secret Manager" as SM
+
+Users --> CDN : HTTPS
+Users --> LB : HTTPS
+LB --> A1
+LB --> A2
+A1 --> RDS
+A2 --> RDS
+A1 --> S3
+A2 --> S3
+A1 ..> SES
+Mon ..> A1
+Mon ..> A2
+SM ..> A1 : env inject
+SM ..> A2 : env inject
+@enduml</pre>
+      </div>
+
+      <h3>ASCII &mdash; production</h3>
+      <div class="code">
+        <div class="code-head"><span class="dot"></span> deployment.txt</div>
+<pre>        +-----------------------------+
+        |        Client Device        |
+        |     Web Browser (React)     |
+        +--------------+--------------+
+                       | HTTPS 443
+                       v
+                ~ ~ ~ Internet ~ ~ ~
+                       | HTTPS 443
+                       v
+   +--------------------------------------------+
+   |     Reverse Proxy - Nginx (TLS)            |
+   |   . React static build (SPA)               |
+   |   . /api  -->  reverse proxy to app:8080   |
+   +----------------------+---------------------+
+                          | HTTP 8080 (REST/JSON, Bearer JWT)
+                          v
+   +------------------------------------------------------------+
+   |       Application Server - Spring Boot JAR (JVM 17)         |
+   |  REST /v1/**                                               |
+   |    -> Spring Security + JwtAuthenticationFilter + @PreAuth |
+   |         -> Business Services                               |
+   |            (Candidate/Recruiter/HiringMgr/Interviewer/     |
+   |             HR/Admin/Auth/Registration-Approval/AI Match/  |
+   |             Interview/Offer/Job/Application/Notification/   |
+   |             Reporting/Audit)                               |
+   |               -> Spring Data JPA -> Hibernate -> HikariCP  |
+   |  Flyway (V1-V34, on boot)   Actuator /health,/metrics      |
+   +------+----------------------------+----------------+-------+
+          | JDBC 3306 (SSL)            | file I/O       | SMTP 587 (opt)
+          v                           v                v
+   +--------------+       +--------------------+   +--------------+
+   |  MySQL 8.4   |       |  File Storage      |   | SMTP / Email |
+   |  schema      |       |  resumes           |   | (planned)    |
+   |  talentai    |       |  FILE_UPLOAD_PATH  |   +--------------+
+   +--------------+       +--------------------+</pre>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2><span class="num">11</span> Security &amp; scalability</h2>
+
+      <h3>Security considerations</h3>
+      <ul class="clean">
+        <li><strong>TLS everywhere in prod</strong> &mdash; HTTPS at the proxy; the app is reachable only on the internal network.</li>
+        <li><strong>Stateless JWT</strong> &mdash; signed bearer tokens (<code>JWT_SECRET</code> from secret manager); no server sessions. Expired/invalid → <code>401</code>.</li>
+        <li><strong>Spring Security + <code>@PreAuthorize</code></strong> &mdash; role-based method authorization (approval endpoints require <code>SYSTEM_ADMIN</code> / <code>HR_ADMIN</code>).</li>
+        <li><strong>Registration approval gate</strong> &mdash; non-Candidate roles cannot log in until Admin approval; System Admin is not self-registerable (data-driven + server-validated).</li>
+        <li><strong>Least-privilege DB user</strong> &mdash; scoped MySQL user (not root); <code>useSSL=true</code> in prod.</li>
+        <li><strong>Secrets never in git</strong> &mdash; dev <code>.env</code> gitignored, prod via secret manager. CORS restricted; Swagger disabled in prod.</li>
+        <li><strong>Auditing</strong> &mdash; register / approve / reject / role-assign / activation / login written to <code>audit_log</code>.</li>
+      </ul>
+
+      <h3>Scalability recommendations</h3>
+      <ul class="clean">
+        <li><strong>Scale the API horizontally</strong> &mdash; it's stateless; run N instances behind the LB. JWT means no sticky sessions.</li>
+        <li><strong>Static / CDN</strong> &mdash; serve the React build from CDN/object storage to offload the app tier.</li>
+        <li><strong>Database</strong> &mdash; tune HikariCP (<code>DB_POOL_MAX_SIZE</code>) to instance count; add a read replica for reporting/dashboards.</li>
+        <li><strong>Move resumes to object storage</strong> so any instance can serve them and storage scales independently.</li>
+        <li><strong>Externalize email</strong> &mdash; a managed email service and/or queue for async delivery when SMTP is enabled.</li>
+        <li><strong>Observability</strong> &mdash; scrape Actuator metrics into Prometheus/Grafana or an APM; alert on latency, error-rate, DB-pool saturation.</li>
+        <li><strong>CI/CD</strong> &mdash; the GitHub Actions workflow already builds/tests; extend it to build the JAR + image and deploy per environment.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <span>TalentAI &middot; Deployment Architecture</span>
+      <span>As-built against Flyway V1&ndash;V34</span>
+      <span>Java 17 &middot; Spring Boot 3.3.5 &middot; MySQL 8.4</span>
+    </footer>
+
+  </main>
+</div>

@@ -10,19 +10,28 @@ $BackendDir = Join-Path $PSScriptRoot 'Backend'
 $JavaHome   = 'C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot'
 $MavenBin   = 'C:\dev-tools\apache-maven-3.9.9\bin'
 $EnvFile    = Join-Path $BackendDir '.env'
+$EnvLocal   = Join-Path $BackendDir '.env.local'   # gitignored secrets (DB creds, JWT)
 
-# --- Load Backend\.env into this process's environment ---
+# --- Load Backend\.env (config), then Backend\.env.local (secrets, overrides) ---
+# Secrets are NOT in .env anymore; locally they come from .env.local, and in
+# deployed environments from AWS Secrets Manager (see deploy/aws/).
 if (-not (Test-Path $EnvFile)) {
     Write-Error "No .env found at $EnvFile. Copy .env.example to .env and fill it in."
 }
-Get-Content $EnvFile | ForEach-Object {
-    $line = $_.Trim()
-    if ($line -and -not $line.StartsWith('#') -and $line.Contains('=')) {
-        $idx  = $line.IndexOf('=')
-        $name = $line.Substring(0, $idx).Trim()
-        $val  = $line.Substring($idx + 1).Trim()
-        Set-Item -Path "Env:$name" -Value $val
+foreach ($file in @($EnvFile, $EnvLocal)) {
+    if (-not (Test-Path $file)) { continue }
+    Get-Content $file | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#') -and $line.Contains('=')) {
+            $idx  = $line.IndexOf('=')
+            $name = $line.Substring(0, $idx).Trim()
+            $val  = $line.Substring($idx + 1).Trim()
+            Set-Item -Path "Env:$name" -Value $val
+        }
     }
+}
+if (-not $env:JWT_SECRET -or -not $env:DB_PASSWORD) {
+    Write-Error "Missing secrets. Provide DB_PASSWORD / JWT_SECRET in $EnvLocal (gitignored) or your environment."
 }
 
 # --- Toolchain (JDK 17 + Maven) for this process only ---

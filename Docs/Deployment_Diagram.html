@@ -1,0 +1,198 @@
+<title>TalentAI Deployment Diagram</title>
+<meta name="description" content="As-built production deployment topology for the TalentAI recruitment platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F4F6FA;
+    --surface: #FFFFFF;
+    --surface-2: #EDF1F7;
+    --ink: #16202B;
+    --ink-2: #4C5A6C;
+    --line: #D7DFEA;
+    --line-strong: #C2CDDB;
+    --accent: #1F5FB2;
+    --ok: #1E7A45;
+    --warn: #A85B0A;
+    --sheet: #EEF2F7;
+    --sheet-line: #D3DCE7;
+    --shadow: 0 1px 2px rgba(20,32,45,.05), 0 10px 30px -14px rgba(20,32,45,.22);
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #0D131A; --surface: #141C25; --surface-2: #1B2530;
+      --ink: #E7ECF3; --ink-2: #9BA9B9; --line: #29333F; --line-strong: #37434F;
+      --accent: #5E9CEA; --ok: #52B67B; --warn: #E0954A;
+      --sheet: #EEF2F7; --sheet-line: #D3DCE7;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --surface: #141C25; --surface-2: #1B2530;
+    --ink: #E7ECF3; --ink-2: #9BA9B9; --line: #29333F; --line-strong: #37434F;
+    --accent: #5E9CEA; --ok: #52B67B; --warn: #E0954A;
+    --sheet: #EEF2F7; --sheet-line: #D3DCE7;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px -16px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 1080px;
+    padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 40px) 56px;
+  }
+
+  header { margin-bottom: 22px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-size: clamp(24px, 3.6vw, 36px);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  .sub { color: var(--ink-2); margin: 0; max-width: 64ch; font-size: 15px; }
+
+  figure {
+    margin: 0;
+    border: 1px solid var(--sheet-line);
+    border-radius: 14px;
+    background: var(--sheet);
+    background-image:
+      linear-gradient(rgba(31,95,178,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31,95,178,.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .mermaid {
+    min-width: 560px;
+    padding: 30px 24px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 26px; height: 0; border-top: 2px solid var(--ink-2); }
+  .swatch.dashed { border-top: 2px dashed var(--warn); }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">TalentAI &middot; As-Built</p>
+    <h1>Deployment Architecture Diagram</h1>
+    <p class="sub">Production topology of the TalentAI recruitment platform &mdash; browser to reverse proxy to the
+      stateless Spring Boot API, over MySQL and disk-backed resume storage.</p>
+  </header>
+
+  <figure>
+<pre class="mermaid">
+flowchart TB
+    subgraph CLIENT["Client Device"]
+        BROWSER["Web Browser<br/>React SPA runtime"]
+    end
+    NET(["Internet · HTTPS 443"])
+    subgraph EDGE["Node: Reverse Proxy — Nginx (TLS 443)"]
+        STATIC["React Frontend<br/>static build: React 19, TS, MUI, Axios"]
+        PROXY["Reverse proxy<br/>/api → app:8080"]
+    end
+    subgraph APP["Node: Application Server — Spring Boot JAR (JVM 17, :8080, /api)"]
+        REST["REST API — @RestController /v1/**"]
+        SEC["Auth — Spring Security + JwtAuthenticationFilter + @PreAuthorize"]
+        SVC["Business Services<br/>Candidate · Recruiter · Hiring Mgr · Interviewer · HR · Admin ·<br/>Auth · Registration-Approval · Company · AI Match (heuristic) ·<br/>Interview · Offer · Job · Application · Notification · Reporting · Audit"]
+        REPO["Repositories — Spring Data JPA"]
+        HIB["Hibernate ORM"]
+        POOL["HikariCP pool"]
+        FLY["Flyway V1–V34 (on boot)"]
+        ACT["Actuator /api/actuator"]
+    end
+    subgraph DATA["Node: Database Server"]
+        MYSQL[("MySQL 8.4<br/>schema: talentai")]
+    end
+    subgraph FILES["Node: File Storage"]
+        RESUMES["Resume uploads<br/>FILE_UPLOAD_PATH"]
+    end
+    SMTP["SMTP / Email — optional"]
+    MON["Monitoring — optional"]
+
+    BROWSER -->|HTTPS 443| NET
+    NET -->|HTTPS 443| EDGE
+    STATIC -.->|assets| BROWSER
+    PROXY -->|HTTP 8080 · REST/JSON · Bearer JWT| REST
+    REST --> SEC --> SVC --> REPO --> HIB --> POOL
+    POOL -->|JDBC 3306 SSL| MYSQL
+    FLY -->|JDBC on boot| MYSQL
+    SVC -->|file I/O| RESUMES
+    SVC -. SMTP 587 planned .-> SMTP
+    MON -. scrape .-> ACT
+</pre>
+  </figure>
+
+  <div class="legend">
+    <span><i class="swatch"></i> Wired today</span>
+    <span><i class="swatch dashed"></i> Optional / planned (SMTP, monitoring)</span>
+  </div>
+
+  <div class="meta">
+    <span class="chip"><b>React 19</b> · Vite · MUI</span>
+    <span class="chip"><b>Spring Boot 3.3.5</b> · JVM 17</span>
+    <span class="chip"><b>MySQL 8.4</b> · Flyway V1–V34</span>
+    <span class="chip">Context <b>/api</b> · :8080</span>
+    <span class="chip">Stateless <b>JWT</b></span>
+  </div>
+</div>

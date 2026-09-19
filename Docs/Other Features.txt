@@ -1,0 +1,24 @@
+Another Feature Worth Considering
+Company Invitation
+
+Instead of only allowing self-registration, companies could invite users.
+
+Example:
+
+Admin
+
+↓
+
+Invite Recruiter
+
+↓
+
+Email sent
+
+↓
+
+Recruiter accepts
+
+↓
+
+Account Activated

@@ -20,6 +20,21 @@ Unit Test
 powershell -Command "cd D:\TalentAI\Backend; $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot'; & 'C:\dev-tools\apache-maven-3.9.9\bin\mvn.cmd' test -Dtest='Candidate*Test'"
 
 
+UI Tests
+set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
+set "PATH=C:\dev-tools\apache-maven-3.9.9\bin;%JAVA_HOME%\bin;%PATH%"
+mvn test -Dheadless=false
+
+
+Load Testing:
+In a cmd window (set the toolchain first, since mvn isn't on your PATH):
+
+set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
+set "PATH=C:\dev-tools\apache-maven-3.9.9\bin;%JAVA_HOME%\bin;%PATH%"
+cd /d D:\TalentAI\LoadTests
+mvn gatling:test -Dprofile=concurrent -Dusers=100 -Dduration=120
+
+
 
 Git
 Your everyday git loop from now on
@@ -69,6 +84,10 @@ Completed	   an interviewer submits feedback
  
 
 Users Created
+
+sowmya127s@gmail.com
+s11112222
+
 
 HRM 1
 hrm1@gmail.com

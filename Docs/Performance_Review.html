@@ -1,0 +1,436 @@
+<title>TalentAI Performance Review</title>
+<meta name="description" content="Enterprise performance, scalability, and quality review of the as-built TalentAI recruitment platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F4F6FA; --surface: #FFFFFF; --surface-2: #EDF1F7;
+    --ink: #16202B; --ink-2: #4C5A6C; --line: #D7DFEA; --line-strong: #C2CDDB;
+    --accent: #1F5FB2; --accent-ink: #0E3D7A; --accent-soft: #E3ECF8;
+    --ok: #1E7A45; --ok-soft: #E1F0E7;
+    --warn: #A85B0A; --warn-soft: #F6EADA;
+    --crit: #B4231F; --crit-soft: #F7E3E2;
+    --code-bg: #0E1621; --code-ink: #D5DEEA; --code-line: #223040;
+    --shadow: 0 1px 2px rgba(20,32,45,.05), 0 8px 24px -12px rgba(20,32,45,.18);
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --bg: #0D131A; --surface: #141C25; --surface-2: #1B2530;
+    --ink: #E7ECF3; --ink-2: #9BA9B9; --line: #29333F; --line-strong: #37434F;
+    --accent: #5E9CEA; --accent-ink: #AECCF6; --accent-soft: #17273B;
+    --ok: #52B67B; --ok-soft: #14261C; --warn: #E0954A; --warn-soft: #2A2113;
+    --crit: #E06B66; --crit-soft: #2C1615;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+  }}
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --surface: #141C25; --surface-2: #1B2530;
+    --ink: #E7ECF3; --ink-2: #9BA9B9; --line: #29333F; --line-strong: #37434F;
+    --accent: #5E9CEA; --accent-ink: #AECCF6; --accent-soft: #17273B;
+    --ok: #52B67B; --ok-soft: #14261C; --warn: #E0954A; --warn-soft: #2A2113;
+    --crit: #E06B66; --crit-soft: #2C1615;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .page { display: grid; grid-template-columns: minmax(0,1fr); max-width: 1180px; margin: 0 auto; padding: clamp(20px,4vw,56px) clamp(16px,4vw,44px) 80px; }
+  @media (min-width: 1060px) { .page { grid-template-columns: 236px minmax(0,1fr); column-gap: 52px; } .masthead { grid-column: 1 / -1; } }
+
+  .masthead { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); padding: clamp(22px,3.5vw,40px); margin-bottom: 40px; }
+  .masthead::before { content:""; position:absolute; inset:0; background-image: linear-gradient(var(--line) 1px,transparent 1px), linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size: 26px 26px; opacity:.25; -webkit-mask-image: linear-gradient(115deg,transparent 42%,#000 100%); mask-image: linear-gradient(115deg,transparent 42%,#000 100%); pointer-events:none; }
+  .masthead > * { position: relative; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  h1 { font-size: clamp(27px,4.4vw,44px); line-height: 1.06; font-weight: 700; letter-spacing: -.02em; margin: 0 0 14px; text-wrap: balance; max-width: 20ch; }
+  .lede { font-size: clamp(15px,1.5vw,17px); color: var(--ink-2); max-width: 66ch; margin: 0 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--mono); font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .verdict { display:flex; flex-wrap:wrap; gap:22px; margin-top:24px; padding-top:20px; border-top:1px solid var(--line); }
+  .verdict .big { font-family: var(--mono); }
+  .verdict .big .n { font-size: 30px; font-weight: 600; color: var(--accent); letter-spacing:-.02em; }
+  .verdict .big .l { display:block; font-size: 11px; letter-spacing:.1em; text-transform:uppercase; color: var(--ink-2); }
+
+  nav.toc { display: none; }
+  @media (min-width: 1060px) { nav.toc { display:block; position: sticky; top: 24px; align-self: start; } }
+  nav.toc .toc-title { font-family: var(--mono); font-size: 11px; letter-spacing:.16em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 12px; padding-left: 14px; }
+  nav.toc ol { list-style:none; margin:0; padding:0; counter-reset: toc; }
+  nav.toc li { counter-increment: toc; }
+  nav.toc a { display:flex; gap:10px; padding:5px 0 5px 14px; border-left:2px solid var(--line); color: var(--ink-2); text-decoration:none; font-size:13.5px; transition: color .15s, border-color .15s; }
+  nav.toc a::before { content: counter(toc,decimal-leading-zero); font-family: var(--mono); font-size:11px; color: var(--line-strong); padding-top:2px; }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 46px; scroll-margin-top: 24px; }
+  h2 { font-size: clamp(20px,2.4vw,26px); letter-spacing:-.015em; font-weight:700; margin:0 0 6px; display:flex; align-items:baseline; gap:12px; }
+  h2 .num { font-family: var(--mono); font-size:14px; font-weight:500; color: var(--accent); }
+  .section-sub { color: var(--ink-2); margin: 0 0 20px; max-width: 70ch; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 10px; letter-spacing:-.01em; }
+  p, li { max-width: 74ch; }
+  a { color: var(--accent); }
+  code, .fp { font-family: var(--mono); font-size: .85em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; color: var(--accent-ink); }
+
+  .callout { border:1px solid var(--line); border-left:3px solid var(--accent); background: var(--surface); border-radius: 10px; padding: 20px 22px; box-shadow: var(--shadow); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout h3 { margin-top: 0; }
+  ul.clean { padding-left: 20px; } ul.clean li { margin: 8px 0; }
+  ul.clean li strong { color: var(--ink); }
+
+  .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; box-shadow: var(--shadow); background: var(--surface); margin: 6px 0; }
+  table { border-collapse: collapse; width:100%; font-size:14px; min-width: 520px; }
+  th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); vertical-align: top; }
+  thead th { font-family: var(--mono); font-size:11.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color: var(--ink-2); background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+  td.mono, th.mono { font-family: var(--mono); font-size:12.5px; font-variant-numeric: tabular-nums; }
+
+  .tag { display:inline-block; font-family: var(--mono); font-size:11px; font-weight:600; letter-spacing:.03em; padding:2px 8px; border-radius:5px; white-space:nowrap; }
+  .tag.crit { background: var(--crit-soft); color: var(--crit); border:1px solid color-mix(in srgb,var(--crit) 34%,transparent); }
+  .tag.high { background: var(--warn-soft); color: var(--warn); border:1px solid color-mix(in srgb,var(--warn) 34%,transparent); }
+  .tag.med  { background: var(--accent-soft); color: var(--accent-ink); border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); }
+  .tag.ok   { background: var(--ok-soft); color: var(--ok); border:1px solid color-mix(in srgb,var(--ok) 30%,transparent); }
+
+  /* scorecard */
+  .scorecard { display:grid; gap:12px; }
+  .score { display:grid; grid-template-columns: 160px 1fr 46px; align-items:center; gap:14px; }
+  @media (max-width:560px){ .score { grid-template-columns: 120px 1fr 40px; } }
+  .score .label { font-size:13.5px; font-weight:500; }
+  .meter { height:10px; border-radius:6px; background: var(--surface-2); border:1px solid var(--line); overflow:hidden; }
+  .meter > span { display:block; height:100%; border-radius:6px 0 0 6px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb,var(--accent) 70%, var(--ok))); }
+  .score .val { font-family: var(--mono); font-size:13px; font-weight:600; text-align:right; font-variant-numeric: tabular-nums; }
+  .score.crit .meter > span { background: linear-gradient(90deg, var(--crit), var(--warn)); }
+  .score.warnbar .meter > span { background: linear-gradient(90deg, var(--warn), var(--accent)); }
+
+  .grid { display:grid; gap:14px; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); }
+  .card { border:1px solid var(--line); border-radius:10px; background: var(--surface); padding:16px 17px; box-shadow: var(--shadow); }
+  .card .kicker { font-family: var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color: var(--accent); margin:0 0 6px; }
+  .card h3 { margin:0 0 6px; font-size:15px; }
+  .card p { margin:0; font-size:13.5px; color: var(--ink-2); }
+  .card .big { font-family: var(--mono); font-size:26px; font-weight:600; color: var(--ink); letter-spacing:-.02em; }
+
+  footer { grid-column:1 / -1; margin-top:20px; padding-top:22px; border-top:1px solid var(--line); font-family: var(--mono); font-size:12px; color: var(--ink-2); display:flex; flex-wrap:wrap; gap:6px 18px; }
+  @media (prefers-reduced-motion: reduce){ * { transition:none!important; } }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <p class="eyebrow">Enterprise Performance Review &middot; As-Built</p>
+    <h1>TalentAI Performance &amp; Scalability Review</h1>
+    <p class="lede">A code-grounded performance, scalability, security, and quality assessment of the TalentAI
+      recruitment platform as implemented &mdash; reviewing the existing build, not redesigning it.</p>
+    <div class="chips">
+      <span class="chip"><b>Spring Boot 3.3.5</b> · JVM 17</span>
+      <span class="chip"><b>MySQL 8.4</b> · Flyway V1–V34</span>
+      <span class="chip"><b>React 19</b> · Vite · MUI</span>
+      <span class="chip">Stateless JWT</span>
+      <span class="chip">HikariCP · Hibernate <code>validate</code></span>
+    </div>
+    <div class="verdict">
+      <div class="big"><span class="n">7.5</span><span class="l">Overall project</span></div>
+      <div class="big"><span class="n">6.5</span><span class="l">Performance</span></div>
+      <div class="big"><span class="n">6.5</span><span class="l">Enterprise readiness</span></div>
+      <div class="big"><span class="n">~1k</span><span class="l">Users before re-arch</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="toc-title">Report</p>
+    <ol>
+      <li><a href="#exec">Executive summary</a></li>
+      <li><a href="#overall">Overall assessment</a></li>
+      <li><a href="#backend">Backend performance</a></li>
+      <li><a href="#frontend">Frontend performance</a></li>
+      <li><a href="#database">Database performance</a></li>
+      <li><a href="#api">API performance</a></li>
+      <li><a href="#security">Security review</a></li>
+      <li><a href="#scalability">Scalability &amp; load</a></li>
+      <li><a href="#metrics">Performance metrics</a></li>
+      <li><a href="#bottlenecks">Bottlenecks</a></li>
+      <li><a href="#optimization">Optimization plan</a></li>
+      <li><a href="#risk">Risk assessment</a></li>
+      <li><a href="#scorecard">Scorecard</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="exec">
+      <h2><span class="num">01</span> Executive summary</h2>
+      <p class="section-sub">TalentAI is a cleanly layered, well-tested Spring Boot + React application whose
+        architecture is sound and whose correctness is strong. Its current limits are operational: single-instance
+        deployment, an untuned connection pool, no caching or asynchronous processing, and a handful of inefficient
+        aggregation/mapping paths. None require redesign — they are configuration and localized-code improvements.</p>
+      <div class="grid">
+        <div class="card"><p class="kicker">Strength</p><p class="big">Clean layering</p><p>Controller → Service → Repository throughout, DTO-bound, Flyway-owned schema, 133 passing unit + integration tests.</p></div>
+        <div class="card"><p class="kicker">Headline risk</p><p class="big">No cache / async</p><p>Every read hits MySQL; notifications and audit are synchronous, on the request thread.</p></div>
+        <div class="card"><p class="kicker">Ceiling</p><p class="big">Pool = 10</p><p>HikariCP <code>maximum-pool-size: 10</code> caps DB concurrency well before the JVM saturates.</p></div>
+        <div class="card"><p class="kicker">Fixed this cycle</p><p class="big">IDOR closed</p><p>Candidate object-level authorization added (<code>CandidateAccessGuard</code>); staff/owner/admin policy enforced.</p></div>
+      </div>
+      <p style="margin-top:18px">The platform comfortably serves <strong>~100 concurrent users</strong> today and, with the
+        recommended tuning (pool sizing, caching, async notifications, a read replica, and horizontal scaling behind a
+        load balancer), is a realistic path to <strong>1,000+</strong>. 5,000 concurrent users requires the full
+        scale-out described in §8.</p>
+    </section>
+
+    <section id="overall">
+      <h2><span class="num">02</span> Overall performance assessment</h2>
+      <p class="section-sub">Module-by-module posture. "Efficient" = indexed + paginated + no obvious N+1; "Watch" = works but has a known inefficiency; ratings are relative to enterprise expectations.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Module</th><th>Posture</th><th>Note (grounded in code)</th></tr></thead>
+        <tbody>
+          <tr><td>Authentication</td><td><span class="tag ok">Efficient</span></td><td>Stateless JWT; BCrypt is the dominant cost (intentional). Per-request DB load of authorities is correct but uncached.</td></tr>
+          <tr><td>Candidate</td><td><span class="tag high">Watch</span></td><td><code>toProfile()</code> does a per-candidate user lookup + a <code>computeExperience()</code> query; fine per-record, N+1 if ever listed.</td></tr>
+          <tr><td>Recruiter / Hiring Mgr / Interviewer / HR</td><td><span class="tag ok">Efficient</span></td><td>Role-gated via <code>@PreAuthorize</code>; queries paginated.</td></tr>
+          <tr><td>Admin / Approval Workflow</td><td><span class="tag high">Watch</span></td><td>Registration queue mapper (<code>RegistrationService.toSummary</code>) issues per-row <code>findById</code> for user/role/company → N+1.</td></tr>
+          <tr><td>Company</td><td><span class="tag ok">Efficient</span></td><td>Simple lookups; resolve-or-create on registration.</td></tr>
+          <tr><td>Job Management / Applications</td><td><span class="tag ok">Efficient</span></td><td>Status columns indexed (<code>ix_job_job_status</code>, <code>ix_application_status</code>); paginated lists.</td></tr>
+          <tr><td>Interview Scheduling</td><td><span class="tag ok">Efficient</span></td><td><code>ix_interview_interview_date</code> supports date queries.</td></tr>
+          <tr><td>Resume Management</td><td><span class="tag med">Watch</span></td><td>Local-disk storage (<code>storage.resume-upload-path</code>); no object store; upload is synchronous.</td></tr>
+          <tr><td>Notifications</td><td><span class="tag high">Watch</span></td><td>In-app rows written synchronously inside the request transaction; no async/queue.</td></tr>
+          <tr><td>Reports / Dashboard</td><td><span class="tag high">Watch</span></td><td>Multiple COUNT queries per load, uncached; <code>DashboardController.countOffer()</code> does <code>offerRepository.findAll().stream()</code> — loads all offers into memory.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="backend">
+      <h2><span class="num">03</span> Backend performance review</h2>
+      <p class="section-sub">Spring Boot service tier — architecture, concurrency, and the specific hot paths.</p>
+
+      <h3>Architecture &amp; strengths</h3>
+      <ul class="clean">
+        <li><strong>Strict layer separation</strong> — controllers stay thin, services hold logic, repositories are Spring Data; requests/responses are immutable DTO records. Highly maintainable and testable.</li>
+        <li><strong>Constructor injection</strong> everywhere (<code>@RequiredArgsConstructor</code>) — no field injection, so beans are immutable and thread-safe by construction.</li>
+        <li><strong>Transactions</strong> scoped correctly with <code>@Transactional</code> (write) / <code>@Transactional(readOnly=true)</code> (read). <code>open-in-view: false</code> — no lazy-loading on the render thread, a common Spring performance trap already avoided.</li>
+        <li><strong>Centralized error handling</strong> (<code>GlobalExceptionHandler</code>) maps exceptions to consistent status codes; the catch-all logs server-side and returns a generic body (no stack-trace leakage).</li>
+      </ul>
+
+      <h3>Weaknesses &amp; opportunities</h3>
+      <ul class="clean">
+        <li><strong>No caching layer</strong> <span class="tag high">high impact</span> — no <code>@EnableCaching</code>/<code>@Cacheable</code> anywhere. Reference data (roles, skills, role-registration policy) and dashboard aggregates are recomputed from MySQL on every call. This is the single highest-leverage backend improvement.</li>
+        <li><strong>No asynchronous processing</strong> <span class="tag high">high impact</span> — no <code>@EnableAsync</code>. Notification and audit writes run inside the request transaction, adding latency to register/approve/login. Move to <code>@Async</code> or an outbox/queue.</li>
+        <li><strong>N+1 in list mappers</strong> <span class="tag med">medium</span> — <code>RegistrationService.toSummary()</code> and <code>getDetail()</code> resolve user, role, and company one row at a time. Batch with an <code>IN</code>-based fetch or a projection/JOIN DTO.</li>
+        <li><strong>In-memory aggregation</strong> <span class="tag med">medium</span> — <code>DashboardController.countOffer()</code> loads the entire <code>offer</code> table and filters in Java; replace with <code>countByOfferStatus(...)</code> (the <code>ix_offer_offer_status</code> index already exists).</li>
+        <li><strong>Connection pool sizing</strong> <span class="tag high">high</span> — <code>DB_POOL_MAX_SIZE</code> defaults to 10. Adequate for ~100 users; a bottleneck at 500+. Tune per instance and per CPU/DB capacity.</li>
+        <li><strong>Logging</strong> — sane levels via env (<code>LOG_LEVEL</code>), WARN in prod. Ensure no PII in logs and prefer async appenders under load.</li>
+      </ul>
+      <div class="callout warn"><h3>Thread safety &amp; memory</h3><p style="margin:0">Services are stateless singletons with injected dependencies — safe under concurrency. Memory risk is confined to the <em>unbounded</em> read paths (<code>findAll()</code> in dashboard/report aggregation): as those tables grow, heap pressure and GC pauses grow with them. Bounding every query (COUNT/aggregate in SQL, paginate lists) removes the risk.</p></div>
+    </section>
+
+    <section id="frontend">
+      <h2><span class="num">04</span> Frontend performance review</h2>
+      <p class="section-sub">React 19 + Vite + MUI SPA.</p>
+      <h3>Strengths</h3>
+      <ul class="clean">
+        <li><strong>Server-state caching done right</strong> — TanStack Query configured with <code>staleTime: 30_000</code> and <code>refetchOnWindowFocus: false</code> (<code>config/queryClient.ts</code>), so navigation reuses cached data instead of refetching on every mount/focus.</li>
+        <li><strong>Consistent data-fetching &amp; forms</strong> — React Query + React Hook Form + Zod; Axios interceptor attaches the JWT centrally. Loading skeletons exist (<code>StatCardSkeleton</code>, etc.).</li>
+        <li><strong>Component reuse</strong> — shared <code>DashboardHero</code>, <code>StatCard</code>, <code>SectionCard</code>, <code>FormTextField</code> primitives.</li>
+      </ul>
+      <h3>Weaknesses</h3>
+      <ul class="clean">
+        <li><strong>No route-based code splitting</strong> <span class="tag high">high</span> — no <code>React.lazy</code>/<code>Suspense</code> and no Vite <code>manualChunks</code>. Every role's pages ship in one bundle, so a Candidate downloads the Admin/Recruiter code too. Lazy-load routes per role to cut first-load JS.</li>
+        <li><strong>Bundle discipline</strong> <span class="tag med">medium</span> — with MUI + charts in a single chunk, initial payload grows with the app. Add code splitting + vendor chunking and measure with a bundle analyzer.</li>
+        <li><strong>Token in <code>localStorage</code></strong> <span class="tag med">security</span> — XSS-exfiltratable (see §7); a rendering-performance-neutral but real hardening item.</li>
+        <li><strong>Accessibility &amp; responsive</strong> — MUI gives a reasonable baseline; a dedicated a11y pass (focus states, labels, contrast) is recommended before enterprise sign-off.</li>
+      </ul>
+    </section>
+
+    <section id="database">
+      <h2><span class="num">05</span> Database performance review</h2>
+      <p class="section-sub">MySQL 8.4 (InnoDB), schema owned by Flyway V1–V34, validated by Hibernate on boot.</p>
+      <h3>Strengths</h3>
+      <ul class="clean">
+        <li><strong>Normalized, constrained schema</strong> — primary keys, foreign keys, and unique constraints (<code>uq_user_email</code>, <code>uq_skill_skill_name</code>, <code>uq_candidate_user</code>) enforce integrity at the DB, not just the app.</li>
+        <li><strong>Targeted indexes</strong> — <code>V24__create_indexes.sql</code> adds status indexes (<code>ix_job_job_status</code>, <code>ix_application_status</code>, <code>ix_offer_offer_status</code>), a date index (<code>ix_interview_interview_date</code>), and composite lookup indexes (<code>ix_approval_history_entity_type_entity_id</code>, <code>ix_audit_log_*</code>). FK columns are auto-indexed by InnoDB.</li>
+        <li><strong>Parameterized queries</strong> — no string-concatenated SQL; the registration search binds <code>:q</code> via <code>LIKE CONCAT</code> and <strong>whitelists</strong> sort columns (<code>RegistrationService.SORT_COLUMNS</code>), so native-query sort injection is not possible.</li>
+        <li><strong>Pagination</strong> — list endpoints use <code>Pageable</code> / the custom <code>ListResponse</code> envelope rather than returning whole tables.</li>
+      </ul>
+      <h3>Weaknesses &amp; recommended indexes</h3>
+      <ul class="clean">
+        <li><strong>Leading-wildcard search</strong> <span class="tag med">medium</span> — the registration/candidate search uses <code>LIKE '%term%'</code>, which cannot use a B-tree index (full scan of the joined set). For larger datasets, add a <strong>FULLTEXT index</strong> on the searched name/email/company columns and switch to <code>MATCH … AGAINST</code>.</li>
+        <li><strong>Composite index for the funnel</strong> <span class="tag med">medium</span> — <code>DashboardController.funnel(jobId)</code> issues repeated <code>countByJobIdAndApplicationStatus</code>. Add <code>ix_application_job_status (job_id, application_status)</code> to cover it in one index.</li>
+        <li><strong>Unbounded scans</strong> <span class="tag high">high</span> — <code>offerRepository.findAll()</code> in the dashboard scales linearly with table size; convert to indexed <code>COUNT … WHERE</code>.</li>
+        <li><strong>Concurrency / locking</strong> — approval and status transitions are short transactions; low contention today. As write volume grows, keep transactions short and consider optimistic locking (<code>@Version</code>) on hot mutable rows (application/interview status).</li>
+      </ul>
+    </section>
+
+    <section id="api">
+      <h2><span class="num">06</span> API performance review</h2>
+      <p class="section-sub">REST design, payloads, and where caching/limits belong.</p>
+      <ul class="clean">
+        <li><strong>Design</strong> — resource-oriented, versioned (<code>/v1/**</code>), correct verbs and status codes; validation errors return <code>422 VALIDATION_FAILED</code>, auth <code>401</code>, authorization <code>403</code>, conflicts <code>409</code>. Consistent <code>ErrorResponse</code> shape.</li>
+        <li><strong>Request validation</strong> — Jakarta Bean Validation on DTOs (<code>@NotBlank</code>, <code>@Email</code>, <code>@Size</code>); runs before controller logic.</li>
+        <li><strong>Pagination / filtering / sorting</strong> — present on list endpoints (status filter, search, page/size, sortBy/direction on the registration queue).</li>
+        <li><strong>Response payloads</strong> — DTO projections keep responses lean; avoid entity serialization.</li>
+        <li><strong>Gaps</strong>: <span class="tag high">no rate limiting</span> on any endpoint (notably <code>/v1/auth/login</code> — brute-force exposure); <span class="tag med">no HTTP caching headers</span> (<code>ETag</code>/<code>Cache-Control</code>) on cacheable reads (reference data, dashboards); <span class="tag med">no bulk endpoints</span> for multi-row admin actions.</li>
+      </ul>
+    </section>
+
+    <section id="security">
+      <h2><span class="num">07</span> Security review (performance-adjacent)</h2>
+      <p class="section-sub">Summarizing the dedicated audit; the candidate IDOR was fixed this cycle.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Area</th><th>State</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Object-level authorization (Candidate)</td><td><span class="tag ok">Fixed</span></td><td><code>CandidateAccessGuard</code> + <code>@PreAuthorize</code>; staff view / owner+admin modify; child rows scoped by candidate.</td></tr>
+          <tr><td>Password security</td><td><span class="tag ok">Good</span></td><td>BCrypt hashing; but server enforces only length ≥ 8 (add complexity).</td></tr>
+          <tr><td>SQL injection</td><td><span class="tag ok">Protected</span></td><td>Parameterized queries; whitelisted native sort.</td></tr>
+          <tr><td>Role validation / approval workflow</td><td><span class="tag ok">Enforced</span></td><td>Method security; System Admin not self-registerable (server-side); login gated on Active + approval status.</td></tr>
+          <tr><td>JWT account-status re-check</td><td><span class="tag high">Open</span></td><td>Filter doesn't re-check <code>isEnabled()</code>/lock per request → suspended user keeps access until token expiry; no revocation.</td></tr>
+          <tr><td>Brute-force / rate limiting</td><td><span class="tag high">Open</span></td><td>No throttling/lockout on login.</td></tr>
+          <tr><td>XSS / sensitive data</td><td><span class="tag med">Harden</span></td><td>JWT in <code>localStorage</code>; add strict CSP. Resume upload lacks content-type validation.</td></tr>
+          <tr><td>CSRF</td><td><span class="tag ok">N/A</span></td><td>Stateless Bearer-token API; CSRF correctly disabled.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="scalability">
+      <h2><span class="num">08</span> Scalability &amp; load analysis</h2>
+      <p class="section-sub">The API is stateless (JWT), so horizontal scaling is available once the shared dependencies (DB pool, cache, file storage) are provisioned for it. Estimates below assume the current single-instance, pool-of-10 configuration unless noted.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Concurrency</th><th>Expected behaviour (current config)</th><th>Primary bottleneck</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">100 users</td><td>Healthy. Reads p95 &lt; 300 ms; pool of 10 sufficient for short queries. CPU/heap comfortable.</td><td>None material</td></tr>
+          <tr><td class="mono">500 users</td><td>Pool contention begins; requests queue for connections on write-heavy or dashboard endpoints. Latency climbs on uncached aggregates.</td><td>HikariCP pool + uncached dashboards</td></tr>
+          <tr><td class="mono">1,000 users</td><td>Single instance saturates (pool waits, CPU on BCrypt + serialization). Needs 2–4 instances behind an LB, a cache, and pool tuning.</td><td>Single node + DB round-trips</td></tr>
+          <tr><td class="mono">5,000 users</td><td>Not supportable as-is. Requires horizontal app tier, Redis cache, DB read replica(s), async notifications, and object storage for resumes.</td><td>DB write path + fan-out; storage</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Scale-out levers (no redesign, incremental)</h3>
+      <ul class="clean">
+        <li><strong>Horizontal app scaling</strong> — stateless already; run N instances behind a load balancer (no sticky sessions needed).</li>
+        <li><strong>Cache tier</strong> — Redis (or Caffeine per-node for reference data) for roles/skills/policy and dashboard aggregates.</li>
+        <li><strong>Database</strong> — tune Hikari to instance count; add a read replica for reporting/dashboards; keep writes on primary.</li>
+        <li><strong>File storage</strong> — move resumes from local disk to object storage (S3/Blob/GCS) so any instance can serve them.</li>
+        <li><strong>Async</strong> — notifications/audit via <code>@Async</code> or a queue to shorten the request path.</li>
+      </ul>
+    </section>
+
+    <section id="metrics">
+      <h2><span class="num">09</span> Performance metrics (estimated enterprise targets)</h2>
+      <p class="section-sub">Reasonable p95 targets for a tuned single region, and the expected current behaviour on this build. These are engineering estimates, not measured SLAs.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Operation</th><th class="mono">Target p95</th><th class="mono">Current (est.)</th><th>Driver</th></tr></thead>
+        <tbody>
+          <tr><td>Login</td><td class="mono">&lt; 400 ms</td><td class="mono">150–400 ms</td><td>BCrypt cost dominates (intentional)</td></tr>
+          <tr><td>Candidate registration</td><td class="mono">&lt; 500 ms</td><td class="mono">200–500 ms</td><td>Writes + synchronous audit/notify</td></tr>
+          <tr><td>Job search</td><td class="mono">&lt; 200 ms</td><td class="mono">50–200 ms</td><td>Indexed + paginated</td></tr>
+          <tr><td>Candidate search</td><td class="mono">&lt; 250 ms</td><td class="mono">80–300 ms</td><td><code>LIKE '%…%'</code> scan grows with data</td></tr>
+          <tr><td>Dashboard load</td><td class="mono">&lt; 500 ms</td><td class="mono">150–600 ms+</td><td>Multiple COUNTs, uncached; <code>findAll</code> path</td></tr>
+          <tr><td>Resume upload</td><td class="mono">&lt; 800 ms</td><td class="mono">100–800 ms</td><td>Disk I/O + file size</td></tr>
+          <tr><td>Interview scheduling</td><td class="mono">&lt; 300 ms</td><td class="mono">80–250 ms</td><td>Indexed writes</td></tr>
+          <tr><td>Report generation</td><td class="mono">&lt; 1.5 s</td><td class="mono">300 ms–2 s</td><td>Aggregations, uncached</td></tr>
+          <tr><td>Approval workflow</td><td class="mono">&lt; 400 ms</td><td class="mono">150–400 ms</td><td>Writes + audit + notify</td></tr>
+          <tr><td>Generic API</td><td class="mono">&lt; 300 ms</td><td class="mono">varies</td><td>DB round-trips, no cache</td></tr>
+          <tr><td>DB query (indexed)</td><td class="mono">&lt; 50 ms</td><td class="mono">&lt; 50 ms</td><td>Risk on <code>findAll</code>/<code>LIKE</code> paths</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="bottlenecks">
+      <h2><span class="num">10</span> Bottlenecks identified</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Bottleneck</th><th>Severity</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">B1</td><td>No caching — every read hits MySQL</td><td><span class="tag high">High</span></td><td>App-wide (no <code>@EnableCaching</code>)</td></tr>
+          <tr><td class="mono">B2</td><td>Synchronous notifications/audit on request thread</td><td><span class="tag high">High</span></td><td><code>AuthServiceImpl</code>, <code>RegistrationService</code></td></tr>
+          <tr><td class="mono">B3</td><td>Connection pool capped at 10</td><td><span class="tag high">High</span></td><td><code>application.yml</code> Hikari</td></tr>
+          <tr><td class="mono">B4</td><td><code>findAll().stream()</code> aggregation loads whole table</td><td><span class="tag med">Medium</span></td><td><code>DashboardController.countOffer</code></td></tr>
+          <tr><td class="mono">B5</td><td>N+1 lookups in list mappers</td><td><span class="tag med">Medium</span></td><td><code>RegistrationService.toSummary/getDetail</code></td></tr>
+          <tr><td class="mono">B6</td><td>Leading-wildcard <code>LIKE</code> search (no FULLTEXT)</td><td><span class="tag med">Medium</span></td><td>Registration/candidate search</td></tr>
+          <tr><td class="mono">B7</td><td>No route code-splitting → large first bundle</td><td><span class="tag med">Medium</span></td><td>Frontend routing</td></tr>
+          <tr><td class="mono">B8</td><td>Resumes on local disk (not shareable across instances)</td><td><span class="tag med">Medium</span></td><td><code>CandidateService.uploadResume</code></td></tr>
+          <tr><td class="mono">B9</td><td>No rate limiting (login brute-force)</td><td><span class="tag high">High</span></td><td>Security / API edge</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="optimization">
+      <h2><span class="num">11</span> Optimization recommendations</h2>
+      <div class="grid">
+        <div class="card"><p class="kicker">Backend</p><p>Add <code>@EnableCaching</code> + <code>@Cacheable</code> on reference data and dashboard aggregates; <code>@EnableAsync</code> for notifications/audit; replace <code>findAll</code> aggregation with COUNT queries; batch N+1 mappers.</p></div>
+        <div class="card"><p class="kicker">Frontend</p><p><code>React.lazy</code> + <code>Suspense</code> per route; Vite <code>manualChunks</code> for vendor/MUI/charts; bundle-analyze; move JWT out of <code>localStorage</code>.</p></div>
+        <div class="card"><p class="kicker">Database</p><p>Add <code>(job_id, application_status)</code> composite; FULLTEXT for search; read replica for reporting; consider <code>@Version</code> on hot status rows.</p></div>
+        <div class="card"><p class="kicker">Caching</p><p>Redis shared cache (cluster-wide) or Caffeine per-node for read-mostly reference data; short TTLs for aggregates.</p></div>
+        <div class="card"><p class="kicker">Security</p><p>Per-request account-status re-check + token revocation; login rate limiting/lockout; server-side password complexity; resume content-type validation; strict CSP.</p></div>
+        <div class="card"><p class="kicker">Cloud &amp; DevOps</p><p>Containerize; deploy 2+ stateless instances behind an LB; object storage for resumes; secret manager for JWT/DB creds; extend CI to build image + deploy per env.</p></div>
+        <div class="card"><p class="kicker">Monitoring</p><p>Scrape Actuator metrics into Prometheus/Grafana or an APM; alert on latency, error rate, and Hikari pool saturation.</p></div>
+        <div class="card"><p class="kicker">Logging</p><p>Async appenders; correlation IDs per request; ensure no PII; keep prod at WARN/INFO.</p></div>
+      </div>
+    </section>
+
+    <section id="risk">
+      <h2><span class="num">12</span> Risk assessment</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>DB pool exhaustion under load spikes</td><td>High @500+</td><td>High</td><td>Tune pool; cache reads; add replica</td></tr>
+          <tr><td>Latency creep as tables grow (uncached aggregates, <code>LIKE</code>)</td><td>Medium</td><td>Medium</td><td>Cache; FULLTEXT; COUNT queries</td></tr>
+          <tr><td>Credential brute-force (no rate limit)</td><td>Medium</td><td>High</td><td>Rate limiting + lockout</td></tr>
+          <tr><td>Suspended user retains access until token expiry</td><td>Low</td><td>Medium</td><td>Per-request status check / revocation</td></tr>
+          <tr><td>Resume storage not multi-instance safe</td><td>Medium (on scale-out)</td><td>Medium</td><td>Object storage</td></tr>
+          <tr><td>Single instance = single point of failure</td><td>Medium</td><td>High</td><td>Horizontal scaling + LB health checks</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="scorecard">
+      <h2><span class="num">13</span> Performance scorecard</h2>
+      <p class="section-sub">Quality attributes rated out of 10 against enterprise expectations, with the reason for each score.</p>
+      <div class="scorecard">
+        <div class="score"><span class="label">Maintainability</span><div class="meter"><span style="width:85%"></span></div><span class="val">8.5</span></div>
+        <div class="score"><span class="label">Modularity</span><div class="meter"><span style="width:85%"></span></div><span class="val">8.5</span></div>
+        <div class="score"><span class="label">Testability</span><div class="meter"><span style="width:85%"></span></div><span class="val">8.5</span></div>
+        <div class="score"><span class="label">Extensibility</span><div class="meter"><span style="width:80%"></span></div><span class="val">8.0</span></div>
+        <div class="score"><span class="label">Reusability</span><div class="meter"><span style="width:75%"></span></div><span class="val">7.5</span></div>
+        <div class="score"><span class="label">Reliability</span><div class="meter"><span style="width:72%"></span></div><span class="val">7.0</span></div>
+        <div class="score warnbar"><span class="label">Security</span><div class="meter"><span style="width:70%"></span></div><span class="val">7.0</span></div>
+        <div class="score warnbar"><span class="label">Performance</span><div class="meter"><span style="width:65%"></span></div><span class="val">6.5</span></div>
+        <div class="score warnbar"><span class="label">Scalability</span><div class="meter"><span style="width:60%"></span></div><span class="val">6.0</span></div>
+        <div class="score crit"><span class="label">Availability</span><div class="meter"><span style="width:58%"></span></div><span class="val">5.8</span></div>
+      </div>
+      <h3>Justification (selected)</h3>
+      <ul class="clean">
+        <li><strong>Maintainability / Modularity / Testability 8.5</strong> — clean layering, DTOs, 133 passing tests including full-stack ITs; easy to change safely.</li>
+        <li><strong>Security 7.0</strong> — strong fundamentals (BCrypt, method security, no SQLi, approval gate) and the IDOR now fixed; held back by missing rate limiting and per-request token-status re-check.</li>
+        <li><strong>Performance 6.5</strong> — correct and lean per-request, but no caching/async and a few unbounded/N+1 paths leave latency on the table.</li>
+        <li><strong>Scalability 6.0 / Availability 5.8</strong> — stateless design enables scale-out, but the as-built single instance + pool-of-10 + local file storage is not yet horizontally deployed.</li>
+      </ul>
+
+      <h3>Project assessment</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Dimension</th><th class="mono">Rating</th><th>One-line rationale</th></tr></thead>
+        <tbody>
+          <tr><td>Overall architecture</td><td class="mono">8.0 / 10</td><td>Clean, conventional, well-separated Spring + React.</td></tr>
+          <tr><td>Database</td><td class="mono">7.5 / 10</td><td>Normalized, indexed, constrained; add FULLTEXT + a composite index.</td></tr>
+          <tr><td>Frontend</td><td class="mono">7.0 / 10</td><td>Solid React Query usage; needs code splitting.</td></tr>
+          <tr><td>Backend</td><td class="mono">7.5 / 10</td><td>Idiomatic and safe; add caching + async.</td></tr>
+          <tr><td>Security</td><td class="mono">7.0 / 10</td><td>Strong base + IDOR fixed; close rate-limiting/token-status gaps.</td></tr>
+          <tr><td>Performance</td><td class="mono">6.5 / 10</td><td>Good per-request; cache + bound queries to raise it.</td></tr>
+          <tr><td>Enterprise readiness</td><td class="mono">6.5 / 10</td><td>Ready for pilot; scale-out + monitoring needed for GA.</td></tr>
+          <tr><td><strong>Overall project</strong></td><td class="mono"><strong>7.5 / 10</strong></td><td>Well-engineered build with a clear, non-structural optimization path.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="conclusion">
+      <h2><span class="num">14</span> Final conclusion</h2>
+      <p>TalentAI is a <strong>well-architected, thoroughly tested</strong> recruitment platform whose foundations —
+        layered Spring Boot, stateless JWT, a normalized and indexed MySQL schema, DTO-bound APIs, and a React Query
+        frontend — are enterprise-appropriate. Its performance limitations are <strong>operational and localized</strong>,
+        not structural: introduce a caching tier, make notifications/audit asynchronous, tune and scale the connection
+        pool, bound the few unbounded aggregation/search paths, and scale the stateless app tier horizontally with a
+        read replica and object storage.</p>
+      <p>Executed in the order given in §11, these changes raise the platform from a comfortable
+        <strong>~100-user pilot</strong> to a <strong>1,000+-user production service</strong> without any redesign — and
+        lay the groundwork for the 5,000-user tier. The build is suitable for pilot deployment now and for full
+        enterprise rollout after the §8/§11 hardening.</p>
+    </section>
+
+    <footer>
+      <span>TalentAI · Enterprise Performance Review</span>
+      <span>As-built: Spring Boot 3.3.5 · MySQL 8.4 · React 19</span>
+      <span>Reviewed against the implementation, 2026</span>
+    </footer>
+  </main>
+</div>

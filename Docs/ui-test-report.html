@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TalentAI — Candidate UI Test Report</title>
+<style>
+  :root {
+    --navy:#14213D; --navy2:#233457; --amber:#FCA311; --amber-d:#E08E00;
+    --cream:#FDF6EC; --card:#FFFFFF; --line:#E7E1D5; --slate:#5C6784;
+    --green:#16A34A; --green-bg:#E4F4E9; --red:#DC2626;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--cream); color:var(--navy);
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 20px 56px; }
+  header { background:var(--navy); color:#fff; border-radius:16px; padding:28px 30px; }
+  header .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; color:var(--amber); }
+  header .dot { width:8px; height:8px; border-radius:50%; background:var(--amber); }
+  header h1 { margin:10px 0 4px; font-size:26px; }
+  header p { margin:0; color:rgba(255,255,255,.72); font-size:14px; }
+  .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px; }
+  .card .n { font-size:30px; font-weight:800; line-height:1; }
+  .card .l { margin-top:6px; font-size:12px; color:var(--slate); text-transform:uppercase; letter-spacing:.03em; }
+  .card.pass .n { color:var(--green); }
+  .card.fail .n { color:var(--red); }
+  .bar { height:10px; border-radius:6px; background:var(--green-bg); overflow:hidden; margin:6px 0 26px; }
+  .bar > span { display:block; height:100%; background:var(--green); }
+  h2 { font-size:16px; margin:26px 0 10px; display:flex; align-items:center; gap:10px; }
+  h2 .suite-meta { font-size:12px; font-weight:500; color:var(--slate); }
+  table { width:100%; border-collapse:collapse; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th, td { text-align:left; padding:11px 14px; font-size:13.5px; border-bottom:1px solid var(--line); }
+  th { background:#F6EFE1; color:var(--navy); font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; }
+  tr:last-child td { border-bottom:none; }
+  td.id { font-weight:700; white-space:nowrap; }
+  td.mono { font-family:'Cascadia Code',Consolas,monospace; font-size:12px; color:var(--slate); }
+  td.time { text-align:right; color:var(--slate); white-space:nowrap; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .tag.pos { background:#E5EDFB; color:#1D4ED8; }
+  .tag.neg { background:#FBF0DE; color:var(--amber-d); }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    padding:3px 10px; border-radius:999px; background:var(--green-bg); color:var(--green); }
+  .badge::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--green); }
+  footer { margin-top:28px; color:var(--slate); font-size:12px; }
+  @media (max-width:640px){ .cards{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow"><span class="dot"></span>Selenium · Headless Chrome</span>
+    <h1>Candidate UI Test Report</h1>
+    <p>Registration &amp; Login flows &mdash; run 2026-09-07 against the live stack (frontend :4200, backend :8080, MySQL :3306)</p>
+  </header>
+
+  <div class="cards">
+    <div class="card"><div class="n">12</div><div class="l">Total tests</div></div>
+    <div class="card pass"><div class="n">12</div><div class="l">Passed</div></div>
+    <div class="card fail"><div class="n">0</div><div class="l">Failed / Errors</div></div>
+    <div class="card"><div class="n">100%</div><div class="l">Pass rate</div></div>
+  </div>
+  <div class="bar"><span style="width:100%"></span></div>
+
+  <h2>Registration &nbsp;<span class="suite-meta">RegisterUiTest · 6 passed · 16.49s</span></h2>
+  <table>
+    <thead><tr><th>TC</th><th>Scenario</th><th>Type</th><th>Test method</th><th>Time</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="id">UI-REG-01</td><td>Register with valid details</td><td><span class="tag pos">positive</span></td><td class="mono">shouldRegister_WhenValidDetails</td><td class="time">3.394s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-REG-02</td><td>Submit empty form &rarr; required errors</td><td><span class="tag neg">negative</span></td><td class="mono">shouldShowRequiredErrors_WhenFormEmpty</td><td class="time">3.069s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-REG-03</td><td>Invalid email format</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectInvalidEmailFormat</td><td class="time">2.524s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-REG-04</td><td>Password too short</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectShortPassword</td><td class="time">2.470s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-REG-05</td><td>Passwords do not match</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectMismatchedPasswords</td><td class="time">2.353s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-REG-06</td><td>Duplicate email</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectDuplicateEmail</td><td class="time">2.702s</td><td><span class="badge">PASS</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Login &nbsp;<span class="suite-meta">LoginUiTest · 6 passed · 18.37s</span></h2>
+  <table>
+    <thead><tr><th>TC</th><th>Scenario</th><th>Type</th><th>Test method</th><th>Time</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="id">UI-LOG-01</td><td>Login with valid candidate</td><td><span class="tag pos">positive</span></td><td class="mono">shouldLogin_WhenValidCredentials</td><td class="time">1.436s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-LOG-02</td><td>Submit empty form &rarr; required errors</td><td><span class="tag neg">negative</span></td><td class="mono">shouldShowRequiredErrors_WhenFormEmpty</td><td class="time">1.563s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-LOG-03</td><td>Invalid email format</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectInvalidEmailFormat</td><td class="time">1.293s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-LOG-04</td><td>Wrong password</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectWrongPassword</td><td class="time">1.155s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-LOG-05</td><td>Unregistered email</td><td><span class="tag neg">negative</span></td><td class="mono">shouldRejectUnregisteredEmail</td><td class="time">1.967s</td><td><span class="badge">PASS</span></td></tr>
+      <tr><td class="id">UI-LOG-06</td><td>Navigate to register</td><td><span class="tag pos">positive</span></td><td class="mono">shouldNavigateToRegister</td><td class="time">0.634s</td><td><span class="badge">PASS</span></td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    Generated from Maven Surefire results · Selenium 4 + JUnit 5 (Page Object Model) · headless Chrome.<br>
+    Reproduce: <code>cd D:\TalentAI\UITests &amp;&amp; mvn test</code> (add <code>-Dheadless=false</code> to watch).
+  </footer>
+</div>
+</body>
+</html>

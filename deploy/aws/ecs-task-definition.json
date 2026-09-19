@@ -1,0 +1,74 @@
+{
+  "_comment": "ECS Fargate task definition for the TalentAI backend. SECRETS come from AWS Secrets Manager (the `secrets` block); non-secret CONFIG is plain `environment`. Replace REGION, ACCOUNT_ID, the image tag, the RDS endpoint, the domain, and the secret ARN. Register with: aws ecs register-task-definition --cli-input-json file://ecs-task-definition.json",
+
+  "family": "talentai-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/talentai-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/talentai-ecs-task-role",
+
+  "containerDefinitions": [
+    {
+      "name": "talentai-backend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/talentai-backend:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
+
+      "_ha_note": "Run this task with the ECS SERVICE desiredCount >= 2 behind the ALB for high availability (the app is stateless). stopTimeout gives Spring's graceful shutdown (server.shutdown=graceful, 20s) time to drain in-flight requests on deploy/scale-in.",
+      "stopTimeout": 30,
+
+      "secrets": [
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:talentai/prod/app-XXXXXX:DB_USERNAME::" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:talentai/prod/app-XXXXXX:DB_PASSWORD::" },
+        { "name": "JWT_SECRET",  "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:talentai/prod/app-XXXXXX:JWT_SECRET::" }
+      ],
+
+      "environment": [
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "prod" },
+        { "name": "SERVER_PORT", "value": "8080" },
+
+        { "name": "DB_HOST", "value": "talentai-prod.xxxxxxxx.REGION.rds.amazonaws.com" },
+        { "name": "DB_PORT", "value": "3306" },
+        { "name": "DB_NAME", "value": "talentai" },
+        { "name": "DB_USE_SSL", "value": "true" },
+        { "name": "DB_POOL_MAX_SIZE", "value": "20" },
+        { "name": "DB_POOL_MIN_IDLE", "value": "5" },
+
+        { "name": "JWT_EXPIRATION_MS", "value": "3600000" },
+        { "name": "JWT_REFRESH_EXPIRATION_MS", "value": "86400000" },
+
+        { "name": "FILE_UPLOAD_PATH", "value": "/mnt/uploads/resumes" },
+        { "name": "FILE_MAX_SIZE_MB", "value": "10" },
+        { "name": "MULTIPART_MAX_FILE_SIZE", "value": "10MB" },
+        { "name": "MULTIPART_MAX_REQUEST_SIZE", "value": "15MB" },
+
+        { "name": "CORS_ALLOWED_ORIGINS", "value": "https://app.yourdomain.com" },
+
+        { "name": "SWAGGER_UI_ENABLED", "value": "false" },
+        { "name": "ACTUATOR_HEALTH_DETAILS", "value": "never" },
+        { "name": "LOG_LEVEL", "value": "WARN" },
+        { "name": "LOG_LEVEL_APP", "value": "INFO" }
+      ],
+
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/api/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/talentai-backend",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "backend"
+        }
+      }
+    }
+  ]
+}

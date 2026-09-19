@@ -1,0 +1,22 @@
+{
+  "_comment": "Attach to the ECS TASK EXECUTION role (talentai-ecs-execution-role) so ECS can read the secret and decrypt it at container start. Replace REGION, ACCOUNT_ID, the secret ARN, and (if you use a customer-managed KMS key) the key ARN. If the secret is encrypted with the default aws/secretsmanager key you can drop the KMS statement.",
+
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadTalentAiSecret",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": ["arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:talentai/prod/app-*"]
+    },
+    {
+      "Sid": "DecryptSecret",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": ["arn:aws:kms:REGION:ACCOUNT_ID:key/YOUR_CMK_KEY_ID"],
+      "Condition": {
+        "StringEquals": { "kms:ViaService": "secretsmanager.REGION.amazonaws.com" }
+      }
+    }
+  ]
+}
