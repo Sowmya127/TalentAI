@@ -73,6 +73,8 @@ jobs:
 
       - name: Build frontend
         working-directory: Frontend
+        env:
+          VITE_API_BASE_URL: /api/v1   # same-origin; Nginx proxies /api to the backend
         run: |
           npm ci
           npm run build
