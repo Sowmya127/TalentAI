@@ -11,8 +11,10 @@ import com.talentai.candidate.repository.CandidateSkillRepository;
 import com.talentai.candidate.repository.CertificationRepository;
 import com.talentai.candidate.repository.EducationRepository;
 import com.talentai.candidate.repository.WorkExperienceRepository;
+import com.talentai.audit.service.AuditService;
 import com.talentai.common.exception.DuplicateResourceException;
 import com.talentai.common.exception.ResourceNotFoundException;
+import com.talentai.common.response.ListResponse;
 import com.talentai.skill.entity.Skill;
 import com.talentai.skill.repository.SkillRepository;
 import com.talentai.skill.service.SkillService;
@@ -20,6 +22,9 @@ import com.talentai.user.entity.User;
 import com.talentai.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,9 +35,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,9 +59,19 @@ public class CandidateService {
     private final SkillRepository skillRepository;
     private final SkillService skillService;
     private final UserRepository userRepository;
+    private final AuditService auditService;
 
     @Value("${file.upload-path:./uploads/resumes}")
     private String uploadPath;
+
+    // Accepted resume document formats (validated by extension).
+    private static final Set<String> ALLOWED_RESUME_EXT = Set.of("pdf", "doc", "docx");
+
+    // Whitelisted sort columns for the native candidate-search query (native -> no property mapping).
+    private static final Map<String, String> SEARCH_SORT = Map.of(
+            "experience", "total_experience",
+            "location", "current_location",
+            "candidateId", "candidate_id");
 
     // --- Profile ---
 
@@ -104,6 +124,75 @@ public class CandidateService {
         c.setModifiedBy(actorUserId);
         candidateRepository.save(c);
         return new CandidateMessageResponse(candidateId, "Profile updated successfully.");
+    }
+
+    // --- Recruiter: search & delete ---
+
+    /** Paginated candidate search over name/email/location + optional min-experience floor. */
+    @Transactional(readOnly = true)
+    public ListResponse<CandidateSearchResult> searchCandidates(String q, String location, BigDecimal minExperience,
+                                                                int page, int size, String sortBy, String direction) {
+        String column = SEARCH_SORT.getOrDefault(sortBy, "total_experience");
+        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(Math.max(0, page - 1), size, Sort.by(dir, column));
+
+        Page<Candidate> result = candidateRepository.search(
+                blankToLowerOrNull(q), blankToLowerOrNull(location), minExperience, pageable);
+        List<Candidate> rows = result.getContent();
+
+        // Batch the referenced users + skills so the page renders in a fixed number of queries.
+        Map<Long, User> users = userRepository.findAllById(
+                        rows.stream().map(Candidate::getUserId).filter(Objects::nonNull).distinct().toList())
+                .stream().collect(Collectors.toMap(User::getUserId, Function.identity()));
+        Map<Long, List<String>> skillsByCandidate = batchSkillNames(
+                rows.stream().map(Candidate::getCandidateId).toList());
+
+        List<CandidateSearchResult> data = rows.stream().map(c -> {
+            User u = c.getUserId() == null ? null : users.get(c.getUserId());
+            return new CandidateSearchResult(
+                    c.getCandidateId(),
+                    u == null ? null : (u.getFirstName() + " " + u.getLastName()),
+                    u == null ? null : u.getEmail(),
+                    c.getCurrentLocation(),
+                    c.getTotalExperience(),
+                    skillsByCandidate.getOrDefault(c.getCandidateId(), List.of()));
+        }).toList();
+        return ListResponse.of(data, result.getTotalElements(), page, size);
+    }
+
+    /** Soft-deletes a candidate (is_active = false) so applications, audit and history are preserved. */
+    @Transactional
+    public void deleteCandidate(Long candidateId, Long actorUserId) {
+        Candidate c = findOrThrow(candidateId);
+        c.setIsActive(false);
+        c.setModifiedBy(actorUserId);
+        candidateRepository.save(c);
+        auditService.log(actorUserId, "DELETE", "Candidate", candidateId, null, null);
+    }
+
+    private Map<Long, List<String>> batchSkillNames(List<Long> candidateIds) {
+        if (candidateIds.isEmpty()) {
+            return Map.of();
+        }
+        List<CandidateSkill> links = candidateSkillRepository.findByCandidateIdInAndIsActiveTrue(candidateIds);
+        if (links.isEmpty()) {
+            return Map.of();
+        }
+        Map<Integer, String> byId = skillRepository.findAllById(
+                        links.stream().map(CandidateSkill::getSkillId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Skill::getSkillId, Skill::getSkillName));
+        Map<Long, List<String>> out = new HashMap<>();
+        for (CandidateSkill link : links) {
+            String name = byId.get(link.getSkillId());
+            if (name != null) {
+                out.computeIfAbsent(link.getCandidateId(), k -> new ArrayList<>()).add(name);
+            }
+        }
+        return out;
+    }
+
+    private String blankToLowerOrNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim().toLowerCase();
     }
 
     private CandidateProfileResponse toProfile(Candidate c) {
@@ -212,6 +301,7 @@ public class CandidateService {
     @Transactional
     public EducationResponse updateEducation(Long candidateId, Long educationId, EducationRequest req, Long actorUserId) {
         Education e = educationRepository.findById(educationId)
+                .filter(row -> row.getCandidateId().equals(candidateId))
                 .orElseThrow(() -> new ResourceNotFoundException("Education not found: " + educationId));
         e.setDegree(req.degree());
         e.setInstitution(req.institution());
@@ -223,8 +313,11 @@ public class CandidateService {
     }
 
     @Transactional
-    public void deleteEducation(Long educationId) {
-        educationRepository.deleteById(educationId);
+    public void deleteEducation(Long candidateId, Long educationId) {
+        Education e = educationRepository.findById(educationId)
+                .filter(row -> row.getCandidateId().equals(candidateId))
+                .orElseThrow(() -> new ResourceNotFoundException("Education not found: " + educationId));
+        educationRepository.delete(e);
     }
 
     private EducationResponse toEducation(Education e) {
@@ -261,6 +354,7 @@ public class CandidateService {
     @Transactional
     public WorkExperienceResponse updateWorkExperience(Long candidateId, Long id, WorkExperienceRequest req, Long actorUserId) {
         WorkExperience w = workExperienceRepository.findById(id)
+                .filter(row -> row.getCandidateId().equals(candidateId))
                 .orElseThrow(() -> new ResourceNotFoundException("Work experience not found: " + id));
         w.setCompanyName(req.companyName());
         w.setDesignation(req.jobTitle());
@@ -272,8 +366,11 @@ public class CandidateService {
     }
 
     @Transactional
-    public void deleteWorkExperience(Long id) {
-        workExperienceRepository.deleteById(id);
+    public void deleteWorkExperience(Long candidateId, Long id) {
+        WorkExperience w = workExperienceRepository.findById(id)
+                .filter(row -> row.getCandidateId().equals(candidateId))
+                .orElseThrow(() -> new ResourceNotFoundException("Work experience not found: " + id));
+        workExperienceRepository.delete(w);
     }
 
     private WorkExperienceResponse toWork(WorkExperience w) {
@@ -306,8 +403,11 @@ public class CandidateService {
     }
 
     @Transactional
-    public void deleteCertification(Long id) {
-        certificationRepository.deleteById(id);
+    public void deleteCertification(Long candidateId, Long id) {
+        Certification c = certificationRepository.findById(id)
+                .filter(row -> row.getCandidateId().equals(candidateId))
+                .orElseThrow(() -> new ResourceNotFoundException("Certification not found: " + id));
+        certificationRepository.delete(c);
     }
 
     private CertificationResponse toCert(Certification c) {
@@ -320,10 +420,17 @@ public class CandidateService {
     @Transactional
     public ResumeUploadResponse uploadResume(Long candidateId, MultipartFile file, Long actorUserId) {
         Candidate c = findOrThrow(candidateId);
+        String original = file.getOriginalFilename() == null ? "resume" : file.getOriginalFilename();
+        // Only accept document formats; reject anything else (e.g. .txt, .exe, .html).
+        int dot = original.lastIndexOf('.');
+        String ext = dot >= 0 ? original.substring(dot + 1).toLowerCase() : "";
+        if (!ALLOWED_RESUME_EXT.contains(ext)) {
+            throw new com.talentai.common.exception.BusinessException("INVALID_RESUME_TYPE",
+                    "Resume must be a PDF or Word document (.pdf, .doc, .docx).");
+        }
         try {
             Path dir = Paths.get(uploadPath);
             Files.createDirectories(dir);
-            String original = file.getOriginalFilename() == null ? "resume" : file.getOriginalFilename();
             String stored = candidateId + "_" + original.replaceAll("[^a-zA-Z0-9._-]", "_");
             Path target = dir.resolve(stored);
             file.transferTo(target.toAbsolutePath().toFile());

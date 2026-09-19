@@ -6,11 +6,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface CandidateSkillRepository extends JpaRepository<CandidateSkill, Long> {
 
     List<CandidateSkill> findByCandidateIdAndIsActiveTrue(Long candidateId);
+
+    /** Batch fetch for many candidates at once (candidate search) — avoids a per-row query. */
+    List<CandidateSkill> findByCandidateIdInAndIsActiveTrue(Collection<Long> candidateIds);
 
     /**
      * Bulk DELETE executed immediately (not a queued per-entity delete), so that

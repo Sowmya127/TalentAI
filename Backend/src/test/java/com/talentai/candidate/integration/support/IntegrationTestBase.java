@@ -135,7 +135,7 @@ public abstract class IntegrationTestBase {
         req.setEmail(uniqueEmail());
         req.setPassword("Password@123");
         req.setPhoneNumber("+91-9000000000");
-        return authService.register(req);
+        return authService.register(req).userId();
     }
 
     /** Registers a user and creates their candidate profile; returns both ids. */

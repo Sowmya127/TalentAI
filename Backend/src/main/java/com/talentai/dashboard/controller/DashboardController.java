@@ -1,11 +1,13 @@
 package com.talentai.dashboard.controller;
 
 import com.talentai.application.repository.ApplicationRepository;
+import com.talentai.config.CacheConfig;
 import com.talentai.dashboard.dto.DashboardDtos.*;
 import com.talentai.interview.repository.InterviewRepository;
 import com.talentai.job.repository.JobRepository;
 import com.talentai.offer.repository.OfferRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +30,7 @@ public class DashboardController {
     private final OfferRepository offerRepository;
 
     @GetMapping
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD, key = "'summary'")
     public ResponseEntity<DashboardSummary> summary() {
         long open = jobRepository.countByJobStatus("Open");
         long applications = applicationRepository.count();
@@ -39,17 +42,19 @@ public class DashboardController {
     }
 
     @GetMapping("/metrics")
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD, key = "'metrics'")
     public ResponseEntity<HiringMetrics> metrics() {
         Double avg = applicationRepository.avgDaysToHire();
         long timeToHire = avg == null ? 0 : Math.round(avg);
-        long accepted = offerRepository.count() == 0 ? 0 : countOffer("Accepted");
-        long declined = countOffer("Declined");
+        long accepted = offerRepository.countByOfferStatus("Accepted");
+        long declined = offerRepository.countByOfferStatus("Declined");
         double acceptanceRate = (accepted + declined) == 0 ? 0.0
                 : Math.round((accepted * 100.0 / (accepted + declined))) / 100.0;
         return ResponseEntity.ok(new HiringMetrics(timeToHire, timeToHire, acceptanceRate));
     }
 
     @GetMapping("/funnel")
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD, key = "'funnel:' + (#jobId == null ? 'all' : #jobId)")
     public ResponseEntity<RecruitmentFunnel> funnel(@RequestParam(required = false) Long jobId) {
         long applied;
         long shortlisted;
@@ -74,13 +79,11 @@ public class DashboardController {
     }
 
     @GetMapping("/time-to-hire")
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD,
+            key = "'tth:' + (#department == null ? 'all' : #department) + ':' + (#period == null ? 'all' : #period)")
     public ResponseEntity<TimeToHire> timeToHire(@RequestParam(required = false) String department,
                                                  @RequestParam(required = false) String period) {
         Double avg = applicationRepository.avgDaysToHire();
         return ResponseEntity.ok(new TimeToHire(department == null ? "All" : department, avg == null ? 0 : Math.round(avg)));
-    }
-
-    private long countOffer(String dbStatus) {
-        return offerRepository.findAll().stream().filter(o -> dbStatus.equals(o.getOfferStatus())).count();
     }
 }

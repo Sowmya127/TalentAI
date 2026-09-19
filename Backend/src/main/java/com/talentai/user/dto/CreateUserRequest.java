@@ -2,6 +2,7 @@ package com.talentai.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -35,5 +36,7 @@ public class CreateUserRequest {
      *  generated server-side (kept only until the notification domain can email
      *  a "set your password" link). Must be at least 8 characters when provided. */
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
+             message = "Password must be at least 8 characters and include a letter and a number")
     private String password;
 }

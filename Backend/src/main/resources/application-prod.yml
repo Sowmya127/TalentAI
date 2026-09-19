@@ -2,6 +2,8 @@
 # turned off; everything else is still environment-variable driven.
 
 springdoc:
+  api-docs:
+    enabled: false      # don't expose the OpenAPI schema publicly in prod
   swagger-ui:
     enabled: false
 

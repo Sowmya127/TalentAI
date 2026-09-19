@@ -42,6 +42,16 @@ public final class CandidateDtos {
     public record CandidateMessageResponse(Long candidateId, String message) {
     }
 
+    /** A single row in the recruiter candidate-search results. */
+    public record CandidateSearchResult(
+            Long candidateId,
+            String name,
+            String email,
+            String location,
+            BigDecimal experience,
+            List<String> skills) {
+    }
+
     // --- Skills ---
     public record SkillsResponse(Long candidateId, List<String> skills) {
     }

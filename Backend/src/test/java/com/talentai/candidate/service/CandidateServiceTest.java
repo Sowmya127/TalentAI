@@ -77,6 +77,7 @@ class CandidateServiceTest {
     @Mock private SkillRepository skillRepository;
     @Mock private SkillService skillService;
     @Mock private UserRepository userRepository;
+    @Mock private com.talentai.audit.service.AuditService auditService;
 
     @InjectMocks private CandidateService candidateService;
 
@@ -511,13 +512,30 @@ class CandidateServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDeleteEducation_ById")
-        void shouldDeleteEducation_ById() {
+        @DisplayName("shouldDeleteEducation_WhenBelongsToCandidate")
+        void shouldDeleteEducation_WhenBelongsToCandidate() {
+            // Arrange
+            Education e = Education.builder().educationId(500L).candidateId(CANDIDATE_ID).isActive(true).build();
+            when(educationRepository.findById(500L)).thenReturn(Optional.of(e));
+
             // Act
-            candidateService.deleteEducation(500L);
+            candidateService.deleteEducation(CANDIDATE_ID, 500L);
 
             // Assert
-            verify(educationRepository).deleteById(500L);
+            verify(educationRepository).delete(e);
+        }
+
+        @Test
+        @DisplayName("shouldThrowNotFound_WhenDeletingEducationOfAnotherCandidate")
+        void shouldThrowNotFound_WhenDeletingEducationOfAnotherCandidate() {
+            // Arrange — the row belongs to a different candidate
+            Education e = Education.builder().educationId(500L).candidateId(CANDIDATE_ID + 1).isActive(true).build();
+            when(educationRepository.findById(500L)).thenReturn(Optional.of(e));
+
+            // Act & Assert
+            assertThatThrownBy(() -> candidateService.deleteEducation(CANDIDATE_ID, 500L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+            verify(educationRepository, never()).delete(any());
         }
 
         @Test
@@ -618,13 +636,17 @@ class CandidateServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDeleteWorkExperience_ById")
-        void shouldDeleteWorkExperience_ById() {
+        @DisplayName("shouldDeleteWorkExperience_WhenBelongsToCandidate")
+        void shouldDeleteWorkExperience_WhenBelongsToCandidate() {
+            // Arrange
+            WorkExperience w = WorkExperience.builder().experienceId(700L).candidateId(CANDIDATE_ID).isActive(true).build();
+            when(workExperienceRepository.findById(700L)).thenReturn(Optional.of(w));
+
             // Act
-            candidateService.deleteWorkExperience(700L);
+            candidateService.deleteWorkExperience(CANDIDATE_ID, 700L);
 
             // Assert
-            verify(workExperienceRepository).deleteById(700L);
+            verify(workExperienceRepository).delete(w);
         }
     }
 
@@ -669,13 +691,17 @@ class CandidateServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDeleteCertification_ById")
-        void shouldDeleteCertification_ById() {
+        @DisplayName("shouldDeleteCertification_WhenBelongsToCandidate")
+        void shouldDeleteCertification_WhenBelongsToCandidate() {
+            // Arrange
+            Certification c = Certification.builder().certificationId(900L).candidateId(CANDIDATE_ID).isActive(true).build();
+            when(certificationRepository.findById(900L)).thenReturn(Optional.of(c));
+
             // Act
-            candidateService.deleteCertification(900L);
+            candidateService.deleteCertification(CANDIDATE_ID, 900L);
 
             // Assert
-            verify(certificationRepository).deleteById(900L);
+            verify(certificationRepository).delete(c);
         }
 
         @Test
@@ -809,6 +835,43 @@ class CandidateServiceTest {
             assertThatThrownBy(() -> candidateService.resolveCandidateId(USER_ID))
                     .isInstanceOf(ResourceNotFoundException.class);
             verifyNoInteractions(skillService);
+        }
+    }
+
+    // =====================================================================
+    @Nested
+    @DisplayName("deleteCandidate")
+    class DeleteCandidate {
+
+        @Test
+        @DisplayName("shouldSoftDeleteAndAudit_WhenCandidateExists")
+        void shouldSoftDeleteAndAudit_WhenCandidateExists() {
+            // Arrange
+            when(candidateRepository.findById(CANDIDATE_ID)).thenReturn(Optional.of(candidate));
+            when(candidateRepository.save(any(Candidate.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // Act
+            candidateService.deleteCandidate(CANDIDATE_ID, ACTOR_ID);
+
+            // Assert — soft delete (is_active=false), stamped, and audited (not a hard delete)
+            ArgumentCaptor<Candidate> captor = ArgumentCaptor.forClass(Candidate.class);
+            verify(candidateRepository).save(captor.capture());
+            assertThat(captor.getValue().getIsActive()).isFalse();
+            assertThat(captor.getValue().getModifiedBy()).isEqualTo(ACTOR_ID);
+            verify(candidateRepository, never()).deleteById(anyLong());
+            verify(auditService).log(eq(ACTOR_ID), eq("DELETE"), eq("Candidate"), eq(CANDIDATE_ID), any(), any());
+        }
+
+        @Test
+        @DisplayName("shouldThrowNotFound_WhenCandidateMissing")
+        void shouldThrowNotFound_WhenCandidateMissing() {
+            // Arrange
+            when(candidateRepository.findById(CANDIDATE_ID)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> candidateService.deleteCandidate(CANDIDATE_ID, ACTOR_ID))
+                    .isInstanceOf(ResourceNotFoundException.class);
+            verify(candidateRepository, never()).save(any());
         }
     }
 }

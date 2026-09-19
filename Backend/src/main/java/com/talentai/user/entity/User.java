@@ -53,4 +53,37 @@ public class User extends BaseAuditableEntity {
 
     @Column(name = "external_idp_subject_id", length = 255)
     private String externalIdpSubjectId;
+
+    // --- Registration / approval (V32) -----------------------------------
+
+    /** NOT_REQUIRED | PENDING_APPROVAL | APPROVED | REJECTED. */
+    @Column(name = "approval_status", nullable = false, length = 20)
+    @Builder.Default
+    private String approvalStatus = "APPROVED";
+
+    @Column(name = "requested_role_id")
+    private Integer requestedRoleId;
+
+    @Column(name = "company_id")
+    private Long companyId;
+
+    @Column(name = "organization_email", length = 150)
+    private String organizationEmail;
+
+    /** NotRequired | Pending | Verified | Failed. */
+    @Column(name = "verification_status", nullable = false, length = 20)
+    @Builder.Default
+    private String verificationStatus = "NotRequired";
+
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @Column(name = "approved_timestamp")
+    private java.time.LocalDateTime approvedTimestamp;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    @Column(name = "last_reviewed_timestamp")
+    private java.time.LocalDateTime lastReviewedTimestamp;
 }

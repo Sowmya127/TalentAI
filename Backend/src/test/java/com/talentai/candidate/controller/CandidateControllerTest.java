@@ -54,6 +54,11 @@ class CandidateControllerTest {
     // mock its collaborators so the slice context can build without the full app.
     @MockBean private com.talentai.security.JwtTokenProvider jwtTokenProvider;
     @MockBean private com.talentai.security.CustomUserDetailsService customUserDetailsService;
+    // Object-level authorization guard referenced by @PreAuthorize on the controller.
+    // The web slice does not scan @Component beans, so provide it as a mock and let
+    // it allow access — ownership/role logic is covered by CandidateAccessGuard's own
+    // and the integration tests.
+    @MockBean private com.talentai.candidate.security.CandidateAccessGuard candidateAccessGuard;
 
     private CandidateProfileResponse profile;
 
@@ -62,6 +67,8 @@ class CandidateControllerTest {
         profile = new CandidateProfileResponse(CANDIDATE_ID, "John Doe", "john@example.com", "Bengaluru",
                 List.of("Java"), new BigDecimal("5.0"), "B.Tech", "/files/resumes/201.pdf",
                 "+91-9000000000", "30 days", new BigDecimal("1800000"));
+        when(candidateAccessGuard.canView(any(), any())).thenReturn(true);
+        when(candidateAccessGuard.canModify(any(), any())).thenReturn(true);
     }
 
     /** Authenticated principal identical to what JwtAuthenticationFilter would set —
@@ -227,7 +234,7 @@ class CandidateControllerTest {
         // Act & Assert
         mockMvc.perform(delete("/v1/candidates/{id}/education/{eduId}", CANDIDATE_ID, 500L).with(candidateAuth()).with(csrf()))
                 .andExpect(status().isNoContent());
-        verify(candidateService).deleteEducation(500L);
+        verify(candidateService).deleteEducation(CANDIDATE_ID, 500L);
     }
 
     @Test

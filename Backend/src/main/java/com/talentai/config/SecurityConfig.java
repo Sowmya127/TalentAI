@@ -2,6 +2,7 @@ package com.talentai.config;
 
 import com.talentai.security.JwtAuthenticationEntryPoint;
 import com.talentai.security.JwtAuthenticationFilter;
+import com.talentai.security.LoginRateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +45,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final LoginRateLimitFilter loginRateLimitFilter;
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -70,8 +72,12 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/v1/public/**").permitAll()
                 .requestMatchers("/v1/api-docs/**", "/v1/swagger-ui/**", "/v1/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // info/metrics and any other actuator endpoint are admin-only (not any authenticated user).
+                .requestMatchers("/actuator/**").hasAnyRole("SYSTEM_ADMIN", "HR_ADMIN")
                 .anyRequest().authenticated()
             )
+            // Rate-limit login before authentication runs, then the JWT filter.
+            .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -82,8 +88,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        // Explicit header allowlist (auth is a Bearer token, so no cookies/credentials needed).
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

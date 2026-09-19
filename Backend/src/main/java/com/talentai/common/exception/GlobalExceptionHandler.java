@@ -57,6 +57,18 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of("INVALID_CREDENTIALS", "Invalid email or password."));
     }
 
+    @ExceptionHandler(PendingApprovalException.class)
+    public ResponseEntity<ErrorResponse> handlePendingApproval(PendingApprovalException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of("REGISTRATION_PENDING", ex.getMessage()));
+    }
+
+    @ExceptionHandler(RegistrationRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleRegistrationRejected(RegistrationRejectedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of("REGISTRATION_REJECTED", ex.getMessage()));
+    }
+
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)

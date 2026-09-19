@@ -34,4 +34,18 @@ public class Role extends BaseAuditableEntity {
 
     @Column(name = "description", length = 200)
     private String description;
+
+    // --- Self-registration policy (V30) ----------------------------------
+
+    @Column(name = "self_registerable", nullable = false)
+    @lombok.Builder.Default
+    private Boolean selfRegisterable = false;
+
+    @Column(name = "requires_approval", nullable = false)
+    @lombok.Builder.Default
+    private Boolean requiresApproval = true;
+
+    @Column(name = "auto_activate", nullable = false)
+    @lombok.Builder.Default
+    private Boolean autoActivate = false;
 }

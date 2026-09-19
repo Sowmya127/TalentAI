@@ -1,6 +1,7 @@
 package com.talentai.candidate.integration;
 
 import com.talentai.candidate.integration.support.IntegrationTestBase;
+import com.talentai.common.enums.RoleName;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -35,15 +36,15 @@ class CandidateResumeIT extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("shouldAcceptResume_RegardlessOfFormat_noValidationDocumented")
-    void shouldAcceptResume_RegardlessOfFormat_noValidationDocumented() throws Exception {
+    @DisplayName("shouldReject_WhenNotAllowedFormat")
+    void shouldReject_WhenNotAllowedFormat() throws Exception {
         Seeded seeded = seedCandidate();
         MockMultipartFile file = new MockMultipartFile("resume", "notes.txt", "text/plain", "just text".getBytes());
 
         mockMvc.perform(multipart("/v1/candidates/{id}/resume", seeded.candidateId())
                         .file(file).header("Authorization", bearer(seeded.userId())))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("Uploaded"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_RESUME_TYPE"));
     }
 
     @Test
@@ -62,11 +63,13 @@ class CandidateResumeIT extends IntegrationTestBase {
     @Test
     @DisplayName("shouldReturn404_WhenUploadingForUnknownCandidate")
     void shouldReturn404_WhenUploadingForUnknownCandidate() throws Exception {
-        long userId = registerUser();
+        // Admin may manage any candidate, so an unknown id resolves to 404 (not 403).
+        long adminUserId = registerUser();
+        grantRole(adminUserId, RoleName.HR_ADMIN);
         MockMultipartFile file = new MockMultipartFile("resume", "cv.pdf", "application/pdf", "x".getBytes());
 
         mockMvc.perform(multipart("/v1/candidates/{id}/resume", 9_999_999L)
-                        .file(file).header("Authorization", bearer(userId)))
+                        .file(file).header("Authorization", bearer(adminUserId)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"));
     }

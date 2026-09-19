@@ -3,6 +3,7 @@ package com.talentai.candidate.integration;
 import com.talentai.candidate.dto.CandidateDtos.CreateCandidateRequest;
 import com.talentai.candidate.integration.support.CandidateTestData;
 import com.talentai.candidate.integration.support.IntegrationTestBase;
+import com.talentai.common.enums.RoleName;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -136,10 +137,12 @@ class CandidateControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("shouldReturn404_WhenCreatingProfileForUnknownUser")
     void shouldReturn404_WhenCreatingProfileForUnknownUser() throws Exception {
-        long userId = registerUser();
+        // Creating a profile for another (here, unknown) user is an admin action.
+        long adminUserId = registerUser();
+        grantRole(adminUserId, RoleName.HR_ADMIN);
         String body = objectMapper.writeValueAsString(new CreateCandidateRequest(9_999_999L, "+91", "Bengaluru"));
 
-        mockMvc.perform(post("/v1/candidates").header("Authorization", bearer(userId))
+        mockMvc.perform(post("/v1/candidates").header("Authorization", bearer(adminUserId))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"));
@@ -172,9 +175,11 @@ class CandidateControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("shouldReturn404_WhenCandidateNotFound")
     void shouldReturn404_WhenCandidateNotFound() throws Exception {
-        long userId = registerUser();
+        // Staff may view any candidate, so an unknown id resolves to 404 (not 403) for them.
+        long recruiterUserId = registerUser();
+        grantRole(recruiterUserId, RoleName.RECRUITER);
 
-        mockMvc.perform(get("/v1/candidates/{id}", 9_999_999L).header("Authorization", bearer(userId)))
+        mockMvc.perform(get("/v1/candidates/{id}", 9_999_999L).header("Authorization", bearer(recruiterUserId)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"));
     }

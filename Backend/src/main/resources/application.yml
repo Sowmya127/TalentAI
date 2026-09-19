@@ -18,8 +18,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
-      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      # Sized for concurrency; still env-overridable per environment/instance. Keep the
+      # DB's max_connections >= (pool size x app instances) when scaling horizontally.
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
       connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
 
   jpa:
@@ -52,15 +54,34 @@ spring:
           starttls:
             enable: true
 
+  servlet:
+    multipart:
+      # Bound resume uploads so an oversized file can't exhaust memory/disk (env-tunable).
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:10MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:15MB}
+
 server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+  # Let in-flight requests finish on SIGTERM (deploys / scale-in) instead of dropping them.
+  shutdown: graceful
+
+spring.lifecycle:
+  timeout-per-shutdown-phase: 20s
 
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:86400000}
+
+# Brute-force protection on the login endpoint (per client IP, fixed window).
+security:
+  login:
+    rate-limit:
+      enabled: ${LOGIN_RATE_LIMIT_ENABLED:true}
+      max-attempts: ${LOGIN_RATE_LIMIT_MAX:10}
+      window-seconds: ${LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
 
 ai:
   provider-base-url: ${AI_PROVIDER_BASE_URL}

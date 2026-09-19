@@ -15,15 +15,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Security-layer integration tests for the candidate endpoints.
  *
- * <p><b>Important — documented authorization behaviour.</b> The
- * {@code CandidateController} carries NO {@code @PreAuthorize} and NO
- * per-owner check: every candidate endpoint requires only a valid JWT
- * (authentication), not a particular role or ownership. These tests therefore
- * assert the ACTUAL behaviour of the running application (production code is not
- * modified). The two tests whose names end in {@code _authorizationGapDocumented}
- * capture a known gap: a candidate can read another candidate's profile, and no
- * role restriction exists. Add {@code @PreAuthorize}/ownership checks in the
- * controller if that is not intended — the tests will then need to flip to 403.
+ * <p>Object-level authorization is enforced by {@code @PreAuthorize} +
+ * {@link com.talentai.candidate.security.CandidateAccessGuard}: recruitment
+ * staff (Recruiter, Hiring Manager, Interviewer, HR Admin, System Admin) may
+ * VIEW any candidate; admins may MODIFY any candidate; a Candidate may act only
+ * on their own profile. These tests assert that a candidate cannot reach another
+ * candidate's data while staff/admin identities can.
  */
 @DisplayName("CandidateSecurityIT")
 class CandidateSecurityIT extends IntegrationTestBase {
@@ -53,13 +50,37 @@ class CandidateSecurityIT extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("shouldReturn200_WhenCandidateViewsAnotherCandidate_authorizationGapDocumented")
-    void shouldReturn200_WhenCandidateViewsAnotherCandidate_authorizationGapDocumented() throws Exception {
+    @DisplayName("shouldReturn403_WhenCandidateViewsAnotherCandidate")
+    void shouldReturn403_WhenCandidateViewsAnotherCandidate() throws Exception {
         Seeded owner = seedCandidate();
         Seeded intruder = seedCandidate();
 
-        // A different authenticated candidate can currently read the owner's profile — no ownership check exists.
+        // A different candidate must NOT be able to read the owner's profile (object-level authorization).
         mockMvc.perform(get("/v1/candidates/{id}", owner.candidateId()).header("Authorization", bearer(intruder.userId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    @DisplayName("shouldReturn403_WhenCandidateModifiesAnotherCandidate")
+    void shouldReturn403_WhenCandidateModifiesAnotherCandidate() throws Exception {
+        Seeded owner = seedCandidate();
+        Seeded intruder = seedCandidate();
+
+        mockMvc.perform(put("/v1/candidates/{id}", owner.candidateId())
+                        .header("Authorization", bearer(intruder.userId()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(CandidateTestData.updateCandidate())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    @DisplayName("shouldAllowCandidateToViewOwnProfile")
+    void shouldAllowCandidateToViewOwnProfile() throws Exception {
+        Seeded owner = seedCandidate();
+
+        mockMvc.perform(get("/v1/candidates/{id}", owner.candidateId()).header("Authorization", bearer(owner.userId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.candidateId").value((int) owner.candidateId()));
     }
@@ -93,10 +114,9 @@ class CandidateSecurityIT extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("shouldAllowAnyAuthenticatedRole_authorizationGapDocumented")
-    void shouldAllowAnyAuthenticatedRole_authorizationGapDocumented() throws Exception {
-        // Role-based authorization is NOT enforced on candidate endpoints: any authenticated
-        // internal role can read a candidate. Demonstrated with an Interviewer identity.
+    @DisplayName("shouldAllowInterviewerToViewCandidate")
+    void shouldAllowInterviewerToViewCandidate() throws Exception {
+        // Interviewer is recruitment staff and may view (but not modify) any candidate.
         Seeded candidate = seedCandidate();
         long interviewerUserId = registerUser();
         grantRole(interviewerUserId, RoleName.INTERVIEWER);
@@ -104,5 +124,20 @@ class CandidateSecurityIT extends IntegrationTestBase {
         mockMvc.perform(get("/v1/candidates/{id}", candidate.candidateId())
                         .header("Authorization", bearer(interviewerUserId)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("shouldReturn403_WhenRecruiterModifiesCandidate")
+    void shouldReturn403_WhenRecruiterModifiesCandidate() throws Exception {
+        // Recruiter can view but must NOT edit a candidate's data (only owner/admin may).
+        Seeded candidate = seedCandidate();
+        long recruiterUserId = registerUser();
+        grantRole(recruiterUserId, RoleName.RECRUITER);
+
+        mockMvc.perform(put("/v1/candidates/{id}", candidate.candidateId())
+                        .header("Authorization", bearer(recruiterUserId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(CandidateTestData.updateCandidate())))
+                .andExpect(status().isForbidden());
     }
 }
