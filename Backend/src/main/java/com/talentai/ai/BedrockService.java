@@ -60,7 +60,7 @@ public class BedrockService {
     public BedrockService(
             @Value("${ai.bedrock.enabled:false}") boolean enabled,
             @Value("${ai.bedrock.region:ap-south-1}") String region,
-            @Value("${ai.bedrock.model-id:amazon.titan-text-express-v1}") String modelId,
+            @Value("${ai.bedrock.model-id:apac.amazon.nova-lite-v1:0}") String modelId,
             @Value("${ai.bedrock.max-tokens:1024}") int maxTokens,
             @Value("${ai.bedrock.timeout-ms:20000}") long timeoutMs) {
         this.enabled = enabled;

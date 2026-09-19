@@ -95,10 +95,13 @@ ai:
   bedrock:
     enabled: ${BEDROCK_ENABLED:false}
     region: ${BEDROCK_REGION:ap-south-1}
-    # Uses the model-agnostic Converse API, so any Bedrock chat model works here.
-    # Default is an Amazon model (no Anthropic use-case approval needed); switch to
-    # e.g. anthropic.claude-3-haiku-20240307-v1:0 once Anthropic access is granted.
-    model-id: ${BEDROCK_MODEL_ID:amazon.titan-text-express-v1}
+    # Uses the model-agnostic Converse API, so any live Bedrock chat model works.
+    # Default is Amazon Nova Lite via the APAC cross-region inference profile (the
+    # on-demand form for Nova in ap-south-1). Requires the account to be enabled
+    # for Bedrock inference; discover live ids with `aws bedrock
+    # list-foundation-models` / `list-inference-profiles`. Note: the older Titan
+    # Text G1 models are retired — do not use them.
+    model-id: ${BEDROCK_MODEL_ID:apac.amazon.nova-lite-v1:0}
     max-tokens: ${BEDROCK_MAX_TOKENS:1024}
     timeout-ms: ${BEDROCK_TIMEOUT_MS:20000}
 

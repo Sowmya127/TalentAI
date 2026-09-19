@@ -45,9 +45,11 @@ ACTUATOR_HEALTH_DETAILS=never
 # See deploy/aws/bedrock/README.md. No AWS keys here — creds come from the role.
 BEDROCK_ENABLED=false
 BEDROCK_REGION=ap-south-1
-# Amazon model via the Converse API — no Anthropic approval needed. Switch to
-# anthropic.claude-3-haiku-20240307-v1:0 once Anthropic access is granted.
-BEDROCK_MODEL_ID=amazon.titan-text-express-v1
+# Amazon Nova Lite via the APAC inference profile (Converse API). Requires the
+# account to be enabled for Bedrock inference. Discover live ids with
+# `aws bedrock list-foundation-models` / `list-inference-profiles`. The older
+# Titan Text G1 models are retired.
+BEDROCK_MODEL_ID=apac.amazon.nova-lite-v1:0
 ENVEOF
   chmod 600 /etc/talentai/talentai.env
 fi

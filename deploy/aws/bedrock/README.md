@@ -13,10 +13,19 @@ works on the deterministic heuristic, exactly as before. Turning it on is three
 steps and needs **no code change and no AWS keys** — the EC2 instance role
 provides credentials.
 
-**Default model: `amazon.titan-text-express-v1`** — an Amazon model that runs
-on-demand in ap-south-1 and, unlike Anthropic, needs **no use-case approval**. So
-step 1 is usually a no-op. See *Switching to Claude* at the bottom once your
-Anthropic access is granted.
+**Default model: `apac.amazon.nova-lite-v1:0`** — Amazon Nova Lite via the APAC
+cross-region inference profile (the on-demand form for Nova in ap-south-1). It
+needs no Anthropic use-case approval. Discover the live ids in your account with:
+
+```bash
+aws bedrock list-foundation-models --region ap-south-1 --by-output-modality TEXT \
+  --query "modelSummaries[?modelLifecycle.status=='ACTIVE'].modelId" --output text
+aws bedrock list-inference-profiles --region ap-south-1 \
+  --query "inferenceProfileSummaries[].inferenceProfileId" --output text
+```
+
+> The older Amazon Titan Text G1 models are **retired** ("model version has
+> reached the end of its life") — don't use them.
 
 ---
 
@@ -91,7 +100,7 @@ curl -fsS http://localhost/api/actuator/health && echo OK
 |-----|---------|---------|
 | `BEDROCK_ENABLED` | `false` | Master switch for both AI features |
 | `BEDROCK_REGION` | `ap-south-1` | Bedrock Region (must offer the model) |
-| `BEDROCK_MODEL_ID` | `amazon.titan-text-express-v1` | Any Bedrock chat model (Converse-compatible) |
+| `BEDROCK_MODEL_ID` | `apac.amazon.nova-lite-v1:0` | Any live Converse-compatible model id (discover with the CLI below) |
 | `BEDROCK_MAX_TOKENS` | `1024` | Max output tokens per call |
 | `BEDROCK_TIMEOUT_MS` | `20000` | Per-call API timeout |
 
@@ -113,6 +122,21 @@ sudo systemctl restart talentai
 
 The IAM policy already covers Claude (it grants all foundation models in the
 Region), so nothing else changes.
+
+## Troubleshooting
+
+Check `sudo journalctl -u talentai | grep -i bedrock` for the exact reason a call
+fell back:
+
+| Log / error | Meaning | Fix |
+|-------------|---------|-----|
+| `ResourceNotFoundException: This model version has reached the end of its life` | The model id is retired | Pick a live id from the CLI discovery above |
+| `ValidationException: Operation not allowed` on **every** model/vendor | The AWS **account** isn't enabled for Bedrock inference (common on new/unverified accounts) | Open an AWS support case to enable Bedrock model invocation; usually 1–2 business days |
+| `AccessDeniedException` | IAM role/policy missing or not yet propagated | Confirm the instance role has `bedrock:InvokeModel` (step 2) |
+| `Bedrock returned non-JSON output` | Model answered but not as JSON | Harmless — falls back; try a stronger model id |
+
+In all cases the request **silently falls back** to the deterministic result — the
+app keeps working while you sort the cause.
 
 ## Failure behaviour
 
