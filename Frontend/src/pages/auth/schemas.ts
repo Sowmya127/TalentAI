@@ -8,10 +8,18 @@ export type LoginFormValues = z.infer<typeof loginSchema>
 
 export const registerSchema = z
   .object({
+    requestedRole: z.string().min(1, 'Please choose a role'),
     firstName: z.string().min(1, 'First name is required').max(50, 'Must be 50 characters or fewer'),
     lastName: z.string().min(1, 'Last name is required').max(50, 'Must be 50 characters or fewer'),
     email: z.string().min(1, 'Email is required').email('Enter a valid email address').max(150),
     phoneNumber: z.string().max(20, 'Must be 20 characters or fewer').optional().or(z.literal('')),
+    companyName: z.string().max(150, 'Must be 150 characters or fewer').optional().or(z.literal('')),
+    organizationEmail: z
+      .string()
+      .email('Enter a valid email address')
+      .max(150)
+      .optional()
+      .or(z.literal('')),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })

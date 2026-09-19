@@ -1,9 +1,12 @@
 import { axiosClient } from './axiosClient'
 import { ENDPOINTS } from './endpoints'
+import type { ListEnvelope } from '@/types/common'
 import type {
   AddCertificationRequest,
   AddCertificationResponse,
   CandidateProfile,
+  CandidateSearchParams,
+  CandidateSearchResult,
   CandidateSkillsResponse,
   Certification,
   CreateCandidateRequest,
@@ -21,6 +24,15 @@ import type {
 export const candidateApi = {
   createProfile: (payload: CreateCandidateRequest) =>
     axiosClient.post<CreateCandidateResponse>(ENDPOINTS.candidates.create, payload).then((res) => res.data),
+
+  /** Recruiter candidate search. */
+  search: (params: CandidateSearchParams) =>
+    axiosClient
+      .get<ListEnvelope<CandidateSearchResult>>(ENDPOINTS.candidates.search, { params })
+      .then((res) => res.data),
+
+  /** Recruiter/admin soft-delete of a candidate. */
+  remove: (candidateId: number) => axiosClient.delete(ENDPOINTS.candidates.byId(candidateId)),
 
   getMyProfile: () => axiosClient.get<CandidateProfile>(ENDPOINTS.candidates.me).then((res) => res.data),
 

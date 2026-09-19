@@ -7,11 +7,14 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined'
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline'
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined'
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined'
+import PersonSearchOutlinedIcon from '@mui/icons-material/PersonSearchOutlined'
+import ThumbsUpDownOutlinedIcon from '@mui/icons-material/ThumbsUpDownOutlined'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
@@ -57,6 +60,12 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: ROUTES.recruiterDashboard, icon: DashboardOutlinedIcon, roles: [RoleKey.RECRUITER] },
   { label: 'Jobs', path: ROUTES.recruiterJobs, icon: WorkOutlineIcon, roles: [RoleKey.RECRUITER] },
   {
+    label: 'Candidate Search',
+    path: ROUTES.recruiterCandidateSearch,
+    icon: PersonSearchOutlinedIcon,
+    roles: [RoleKey.RECRUITER],
+  },
+  {
     label: 'Recruitment Reports',
     path: ROUTES.recruiterReports,
     icon: BarChartOutlinedIcon,
@@ -77,6 +86,12 @@ export const NAV_ITEMS: NavItem[] = [
     roles: [RoleKey.HIRING_MANAGER],
   },
   { label: 'Reports', path: ROUTES.reportsDashboard, icon: BarChartOutlinedIcon, roles: [RoleKey.HIRING_MANAGER] },
+  {
+    label: 'Hiring Decisions',
+    path: ROUTES.reportsHiringDecisions,
+    icon: ThumbsUpDownOutlinedIcon,
+    roles: [RoleKey.HIRING_MANAGER],
+  },
 
   // Interviewer
   {
@@ -103,6 +118,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'User Management',
     path: ROUTES.hrAdminUsers,
     icon: GroupOutlinedIcon,
+    roles: [RoleKey.HR_ADMIN, RoleKey.SYSTEM_ADMIN],
+  },
+  {
+    label: 'Registrations',
+    path: ROUTES.hrAdminRegistrations,
+    icon: HowToRegOutlinedIcon,
     roles: [RoleKey.HR_ADMIN, RoleKey.SYSTEM_ADMIN],
   },
   {

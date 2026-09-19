@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Grid, Stack, Typography } from '@mui/material'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined'
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
@@ -27,6 +28,7 @@ function greeting(): string {
 
 const QUICK_LINKS: { label: string; description: string; icon: ComponentType; to: string }[] = [
   { label: 'User Management', description: 'Create and manage internal accounts', icon: GroupOutlinedIcon, to: ROUTES.hrAdminUsers },
+  { label: 'Registration Approvals', description: 'Review pending self-registrations', icon: HowToRegOutlinedIcon, to: ROUTES.hrAdminRegistrations },
   { label: 'Role Management', description: 'Define roles and permissions', icon: AdminPanelSettingsOutlinedIcon, to: ROUTES.hrAdminRoles },
   { label: 'Notifications', description: 'Trigger and review notifications', icon: NotificationsActiveOutlinedIcon, to: ROUTES.hrAdminNotifications },
   { label: 'Audit Logs', description: 'Review significant system actions', icon: HistoryOutlinedIcon, to: ROUTES.hrAdminAuditLogs },

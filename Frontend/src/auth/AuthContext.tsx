@@ -6,14 +6,14 @@ import { tokenStorage } from '@/utils/storage'
 import { ROUTES } from '@/constants/routes'
 import { toRoleKey, type RoleKey } from '@/constants/roles'
 import { getUserIdFromToken } from '@/utils/jwt'
-import type { AuthUser, LoginRequest, RegisterRequest } from '@/types/auth'
+import type { AuthUser, LoginRequest, RegisterRequest, RegisterResponse } from '@/types/auth'
 
 interface AuthContextValue {
   user: AuthUser | null
   roleKeys: RoleKey[]
   isAuthenticated: boolean
   login: (payload: LoginRequest) => Promise<AuthUser>
-  register: (payload: RegisterRequest) => Promise<void>
+  register: (payload: RegisterRequest) => Promise<RegisterResponse>
   logout: () => void
   hasRole: (...roles: RoleKey[]) => boolean
 }
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const register = useCallback(async (payload: RegisterRequest) => {
-    await authApi.register(payload)
+    return authApi.register(payload)
   }, [])
 
   const logout = useCallback(() => {

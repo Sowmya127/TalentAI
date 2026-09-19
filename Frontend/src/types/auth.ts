@@ -9,10 +9,16 @@ export interface RegisterRequest {
   email: string
   password: string
   phoneNumber?: string
+  /** Role name to register as; omitted = Candidate. Server rejects non-self-registerable roles. */
+  requestedRole?: string
+  companyName?: string
+  organizationEmail?: string
 }
 
 export interface RegisterResponse {
   userId: number
+  /** ACTIVE (candidate) or PENDING_APPROVAL (approval-required roles). */
+  status: 'ACTIVE' | 'PENDING_APPROVAL'
   message: string
 }
 

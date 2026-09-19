@@ -13,6 +13,16 @@ export const ENDPOINTS = {
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
   },
+  registration: {
+    // Public: roles offered on the "Register as" form (self-registerable only).
+    selfRegisterableRoles: '/public/roles',
+    // Admin approval module.
+    requests: '/admin/registration-requests',
+    request: (id: number | string) => `/admin/registration-requests/${id}`,
+    history: (id: number | string) => `/admin/registration-requests/${id}/history`,
+    approve: (id: number | string) => `/admin/registration-requests/${id}/approve`,
+    reject: (id: number | string) => `/admin/registration-requests/${id}/reject`,
+  },
   users: {
     create: '/users',
     // Inferred — not in the API spec, which only has token-based
@@ -25,6 +35,8 @@ export const ENDPOINTS = {
   },
   candidates: {
     create: '/candidates',
+    // Recruiter candidate search (paginated ListResponse envelope).
+    search: '/candidates/search',
     // Inferred — not in the API spec. The spec has no way to resolve "my
     // candidate record" from the JWT alone (every /candidates/{id} endpoint
     // assumes the id is already known), so this fills that one real gap
@@ -120,6 +132,9 @@ export const ENDPOINTS = {
     recruiters: '/reports/recruiters',
     interviews: '/reports/interviews',
     offers: '/reports/offers',
+    // Hiring-manager decision history (selected vs rejected in the last N days).
+    hiringDecisions: '/reports/hiring-decisions',
+    hiringDecisionsDownload: '/reports/hiring-decisions/download',
   },
   admin: {
     roles: '/admin/roles',

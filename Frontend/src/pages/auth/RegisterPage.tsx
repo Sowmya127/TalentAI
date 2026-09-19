@@ -1,37 +1,84 @@
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Grid, Link as MuiLink, Stack, Typography } from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
+import {
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Grid,
+  Link as MuiLink,
+  Radio,
+  RadioGroup,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { FormTextField } from '@/components/form/FormTextField'
 import { AppButton } from '@/components/common/AppButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
+import { registrationApi } from '@/api/registrationApi'
 import { ROUTES } from '@/constants/routes'
 import { registerSchema, type RegisterFormValues } from './schemas'
 
+const FALLBACK_ROLES = [
+  { role: 'Candidate' },
+  { role: 'Recruiter' },
+  { role: 'Hiring Manager' },
+  { role: 'Interviewer' },
+  { role: 'HR Admin' },
+]
+
 export default function RegisterPage() {
-  const { register: registerCandidate } = useAuth()
+  const { register: registerUser } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
 
-  const { control, handleSubmit } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { firstName: '', lastName: '', email: '', phoneNumber: '', password: '', confirmPassword: '' },
+  // Roles offered for self-registration (System Admin is never returned by the API).
+  const { data: roles } = useQuery({
+    queryKey: ['selfRegisterableRoles'],
+    queryFn: registrationApi.getSelfRegisterableRoles,
   })
+  const roleOptions = roles && roles.length > 0 ? roles : FALLBACK_ROLES
+
+  const { control, handleSubmit, watch } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      requestedRole: 'Candidate',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNumber: '',
+      companyName: '',
+      organizationEmail: '',
+      password: '',
+      confirmPassword: '',
+    },
+  })
+  const requestedRole = watch('requestedRole')
+  const isCandidate = requestedRole === 'Candidate'
 
   const onSubmit = async (values: RegisterFormValues) => {
     setSubmitting(true)
     try {
-      await registerCandidate({
+      const result = await registerUser({
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         password: values.password,
         phoneNumber: values.phoneNumber || undefined,
+        requestedRole: values.requestedRole,
+        companyName: isCandidate ? undefined : values.companyName || undefined,
+        organizationEmail: isCandidate ? undefined : values.organizationEmail || undefined,
       })
-      toast.success('Registration successful. Please sign in.')
+      // ACTIVE (candidate) → sign in now; PENDING_APPROVAL → the message says to wait.
+      if (result.status === 'PENDING_APPROVAL') {
+        toast.info(result.message)
+      } else {
+        toast.success('Registration successful. Please sign in.')
+      }
       navigate(ROUTES.login, { replace: true })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Registration failed. Please try again.')
@@ -44,12 +91,29 @@ export default function RegisterPage() {
     <Stack spacing={3} component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Stack spacing={0.5}>
         <Typography variant="h5" fontWeight={700}>
-          Create your candidate account
+          Create your account
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Internal roles (Recruiter, Hiring Manager, etc.) are provisioned by an administrator.
+          Candidates are activated instantly. Recruiter, Hiring Manager, Interviewer and HR accounts are
+          reviewed by an administrator before activation. (System Administrator accounts are provisioned
+          internally.)
         </Typography>
       </Stack>
+
+      <Controller
+        name="requestedRole"
+        control={control}
+        render={({ field, fieldState }) => (
+          <FormControl error={Boolean(fieldState.error)}>
+            <FormLabel sx={{ mb: 0.5, fontWeight: 600 }}>Register as</FormLabel>
+            <RadioGroup {...field}>
+              {roleOptions.map((r) => (
+                <FormControlLabel key={r.role} value={r.role} control={<Radio size="small" />} label={r.role} />
+              ))}
+            </RadioGroup>
+          </FormControl>
+        )}
+      />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -61,12 +125,25 @@ export default function RegisterPage() {
       </Grid>
 
       <FormTextField name="email" control={control} label="Email" type="email" autoComplete="email" />
-      <FormTextField
-        name="phoneNumber"
-        control={control}
-        label="Phone number (optional)"
-        autoComplete="tel"
-      />
+      <FormTextField name="phoneNumber" control={control} label="Phone number (optional)" autoComplete="tel" />
+
+      {!isCandidate ? (
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormTextField name="companyName" control={control} label="Company (optional)" autoComplete="organization" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormTextField
+              name="organizationEmail"
+              control={control}
+              label="Work email (optional)"
+              type="email"
+              autoComplete="email"
+            />
+          </Grid>
+        </Grid>
+      ) : null}
+
       <FormTextField
         name="password"
         control={control}

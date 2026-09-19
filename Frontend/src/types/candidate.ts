@@ -129,3 +129,23 @@ export interface WorkExperienceRequest {
   isCurrent?: boolean
   description?: string
 }
+
+/** One row in the recruiter candidate-search results. */
+export interface CandidateSearchResult {
+  candidateId: number
+  name: string | null
+  email: string | null
+  location: string | null
+  experience: number | null
+  skills: string[]
+}
+
+export interface CandidateSearchParams {
+  q?: string
+  location?: string
+  minExperience?: number
+  page?: number
+  size?: number
+  sortBy?: 'experience' | 'location' | 'candidateId'
+  direction?: 'asc' | 'desc'
+}

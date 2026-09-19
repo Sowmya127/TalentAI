@@ -14,13 +14,28 @@ const SERIF = "'Georgia', 'Times New Roman', serif"
 const NAVY = '#14213D'
 const AMBER = '#FCA311'
 
-const STATS = [
-  { dot: AMBER, label: '380+ teams' },
-  { dot: '#F4B7B7', label: '12k placed' },
-  { dot: '#9BD1B6', label: '4.8 avg rating' },
+// In-page sections (replaces the old placeholder nav links).
+const NAV_LINKS = [
+  { label: 'What is TalentAI', href: '#what' },
+  { label: 'How it’s designed', href: '#how' },
+  { label: 'About', href: '#about' },
 ]
 
-const NAV_LINKS = ['Roles', 'Companies', 'How it works']
+// What the platform actually does — grounded in the implemented modules.
+const WHAT_POINTS = [
+  { title: 'Self-registration & approval', body: 'Candidates join instantly; recruiters, hiring managers, interviewers and HR request access and are approved by an administrator.' },
+  { title: 'Jobs & applications', body: 'Create and publish roles, then manage every application through a clear, staged pipeline.' },
+  { title: 'Interviews & feedback', body: 'Schedule interviews and capture structured, per-competency interviewer feedback.' },
+  { title: 'Offers & decisions', body: 'Generate offers, route them for approval, and record the final hiring decision.' },
+]
+
+// How it is built — grounded in the actual architecture.
+const DESIGN_POINTS = [
+  { title: 'Role-based by design', body: 'Six roles — Candidate, Recruiter, Hiring Manager, Interviewer, HR and Administrator — each see only what they need, enforced on the server.' },
+  { title: 'Secure by default', body: 'Stateless JWT authentication, BCrypt password hashing, and server-side validation on every request.' },
+  { title: 'Modular architecture', body: 'A React + Material UI frontend and a Spring Boot + MySQL backend, organised into independent domain modules.' },
+  { title: 'Workflow-driven', body: 'Registration approvals, in-app notifications, and audit trails are built into the core.' },
+]
 
 export default function LandingPage() {
   const { isAuthenticated, roleKeys } = useAuth()
@@ -55,13 +70,13 @@ export default function LandingPage() {
             <Stack direction="row" spacing={4} sx={{ display: { xs: 'none', md: 'flex' } }}>
               {NAV_LINKS.map((link) => (
                 <Typography
-                  key={link}
+                  key={link.href}
                   component="a"
-                  href="#"
+                  href={link.href}
                   variant="body2"
                   sx={{ color: alpha(NAVY, 0.75), textDecoration: 'none', '&:hover': { color: NAVY } }}
                 >
-                  {link}
+                  {link.label}
                 </Typography>
               ))}
             </Stack>
@@ -127,12 +142,18 @@ export default function LandingPage() {
                 size="large"
                 sx={{ borderRadius: 6, px: 3, borderColor: alpha(NAVY, 0.25), color: NAVY }}
               >
-                Register as a candidate
+                Register
               </AppButton>
             </Stack>
 
+            {/* Real, verifiable facts — no invented vanity metrics. The role count
+                is live from the API; the rest reflect the actual platform. */}
             <Stack direction="row" spacing={3} sx={{ mt: 4 }} flexWrap="wrap" useFlexGap>
-              {STATS.map((s) => (
+              {[
+                { dot: AMBER, label: jobsQuery.isLoading ? 'Live roles updating…' : `${openCount} open role${openCount === 1 ? '' : 's'}` },
+                { dot: '#9BD1B6', label: 'Full hiring lifecycle' },
+                { dot: '#F4B7B7', label: 'Role-based access' },
+              ].map((s) => (
                 <Stack key={s.label} direction="row" alignItems="center" spacing={1}>
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: s.dot }} />
                   <Typography variant="body2" sx={{ color: alpha(NAVY, 0.7) }}>
@@ -232,6 +253,106 @@ export default function LandingPage() {
           </Box>
         </Stack>
       </Container>
+
+      {/* ── What is TalentAI ───────────────────────────────────────── */}
+      <Box id="what" sx={{ py: { xs: 6, md: 8 } }}>
+        <Container maxWidth="lg">
+          <Typography variant="overline" sx={{ color: AMBER, fontWeight: 700, letterSpacing: '0.12em' }}>
+            What is {env.appName}
+          </Typography>
+          <Typography
+            component="h2"
+            sx={{ fontFamily: SERIF, fontWeight: 700, color: NAVY, mt: 1, mb: 2,
+                  fontSize: { xs: '1.8rem', md: '2.4rem' }, letterSpacing: '-0.01em' }}
+          >
+            One place for the whole hiring journey.
+          </Typography>
+          <Typography variant="body1" sx={{ color: alpha(NAVY, 0.72), maxWidth: 720, mb: 4 }}>
+            {env.appName} is a recruitment platform that runs the entire hiring process end to end — from a
+            candidate creating a profile to a team making an offer — without spreadsheets or scattered tools.
+            Everyone works in the same system, each seeing only the part of the process that belongs to them.
+          </Typography>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            {WHAT_POINTS.map((p) => (
+              <Box
+                key={p.title}
+                sx={{ bgcolor: '#FFFFFF', border: `1px solid ${alpha(NAVY, 0.1)}`, borderRadius: 2, p: 2.5 }}
+              >
+                <Typography variant="subtitle1" fontWeight={700} sx={{ color: NAVY, mb: 0.5 }}>
+                  {p.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: alpha(NAVY, 0.7) }}>
+                  {p.body}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
+      {/* ── How TalentAI is designed ───────────────────────────────── */}
+      <Box id="how" sx={{ bgcolor: NAVY, color: '#FFFFFF', py: { xs: 6, md: 8 } }}>
+        <Container maxWidth="lg">
+          <Typography variant="overline" sx={{ color: AMBER, fontWeight: 700, letterSpacing: '0.12em' }}>
+            How it’s designed
+          </Typography>
+          <Typography
+            component="h2"
+            sx={{ fontFamily: SERIF, fontWeight: 700, mt: 1, mb: 2,
+                  fontSize: { xs: '1.8rem', md: '2.4rem' }, letterSpacing: '-0.01em' }}
+          >
+            Built to be secure, modular and role-aware.
+          </Typography>
+          <Typography variant="body1" sx={{ color: alpha('#FFFFFF', 0.75), maxWidth: 720, mb: 4 }}>
+            {env.appName} is engineered like a production recruitment system: a clear separation between what each
+            role can do, security enforced on the server, and a codebase split into independent modules that can
+            grow without getting in each other’s way.
+          </Typography>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            {DESIGN_POINTS.map((p) => (
+              <Box
+                key={p.title}
+                sx={{ bgcolor: alpha('#FFFFFF', 0.05), border: `1px solid ${alpha('#FFFFFF', 0.12)}`,
+                      borderRadius: 2, p: 2.5 }}
+              >
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>
+                  {p.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: alpha('#FFFFFF', 0.7) }}>
+                  {p.body}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
+      {/* ── About ──────────────────────────────────────────────────── */}
+      <Box id="about" sx={{ py: { xs: 6, md: 8 } }}>
+        <Container maxWidth="md">
+          <Typography variant="overline" sx={{ color: AMBER, fontWeight: 700, letterSpacing: '0.12em' }}>
+            About
+          </Typography>
+          <Typography
+            component="h2"
+            sx={{ fontFamily: SERIF, fontWeight: 700, color: NAVY, mt: 1, mb: 2,
+                  fontSize: { xs: '1.8rem', md: '2.4rem' }, letterSpacing: '-0.01em' }}
+          >
+            About {env.appName}
+          </Typography>
+          <Typography variant="body1" sx={{ color: alpha(NAVY, 0.72), mb: 2 }}>
+            {env.appName} was built to show what a modern, enterprise-style recruitment platform looks like when the
+            whole hiring lifecycle lives in one connected system. Its purpose is simple: make hiring transparent and
+            fast for everyone involved — candidates, recruiters, hiring managers, interviewers and HR — while keeping
+            data secure and access strictly scoped to each person’s role.
+          </Typography>
+          <Typography variant="body1" sx={{ color: alpha(NAVY, 0.72) }}>
+            The platform brings together candidate profiles and résumés, job posting and applications, interview
+            scheduling and feedback, offers and approvals, notifications, and reporting — each as a first-class part
+            of the product rather than an afterthought.
+          </Typography>
+        </Container>
+      </Box>
 
       {/* ── Browse by craft strip ──────────────────────────────────── */}
       <Box sx={{ bgcolor: alpha('#9BD1B6', 0.2), py: 5 }}>

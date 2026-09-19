@@ -1,4 +1,6 @@
+import { Suspense, lazy } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { Box, CircularProgress } from '@mui/material'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { RequireAuth } from '@/auth/RequireAuth'
@@ -7,79 +9,96 @@ import { GuestOnly } from '@/auth/GuestOnly'
 import { ROLE_GROUPS } from '@/auth/permissions'
 import { ROUTES } from '@/constants/routes'
 
-import CandidateDashboardPage from '@/pages/candidate/CandidateDashboardPage'
-import CandidateProfilePage from '@/pages/candidate/CandidateProfilePage'
-import CandidateProfileEditPage from '@/pages/candidate/CandidateProfileEditPage'
-import ResumeUploadPage from '@/pages/candidate/ResumeUploadPage'
-import ResumeParseResultPage from '@/pages/candidate/ResumeParseResultPage'
-import SkillsPage from '@/pages/candidate/SkillsPage'
-import EducationPage from '@/pages/candidate/EducationPage'
-import WorkExperiencePage from '@/pages/candidate/WorkExperiencePage'
-import CertificationsPage from '@/pages/candidate/CertificationsPage'
-import AppliedJobsPage from '@/pages/candidate/AppliedJobsPage'
-import JobSearchPage from '@/pages/candidate/JobSearchPage'
-import JobDetailsPage from '@/pages/candidate/JobDetailsPage'
-import JobApplicationConfirmationPage from '@/pages/candidate/JobApplicationConfirmationPage'
-
-import RecruiterDashboardPage from '@/pages/recruiter/RecruiterDashboardPage'
-import CreateJobPage from '@/pages/recruiter/CreateJobPage'
-import EditJobPage from '@/pages/recruiter/EditJobPage'
-import ViewJobsPage from '@/pages/recruiter/ViewJobsPage'
-import ViewApplicantsPage from '@/pages/recruiter/ViewApplicantsPage'
-import CandidateDetailsPage from '@/pages/recruiter/CandidateDetailsPage'
-import AiMatchResultsPage from '@/pages/recruiter/AiMatchResultsPage'
-import ShortlistCandidatesPage from '@/pages/recruiter/ShortlistCandidatesPage'
-import ScheduleInterviewPage from '@/pages/recruiter/ScheduleInterviewPage'
-import RecruitmentReportsPage from '@/pages/recruiter/RecruitmentReportsPage'
-
-import HiringManagerDashboardPage from '@/pages/hiringManager/HiringManagerDashboardPage'
-import JobApprovalsPage from '@/pages/hiringManager/JobApprovalsPage'
-import CandidateReviewPage from '@/pages/hiringManager/CandidateReviewPage'
-import InterviewFeedbackPage from '@/pages/hiringManager/InterviewFeedbackPage'
-import ApproveOfferPage from '@/pages/hiringManager/ApproveOfferPage'
-import RejectOfferPage from '@/pages/hiringManager/RejectOfferPage'
-
-import InterviewerDashboardPage from '@/pages/interviewer/InterviewerDashboardPage'
-import UpcomingInterviewsPage from '@/pages/interviewer/UpcomingInterviewsPage'
-import InterviewerCandidateDetailsPage from '@/pages/interviewer/InterviewerCandidateDetailsPage'
-import InterviewFeedbackFormPage from '@/pages/interviewer/InterviewFeedbackFormPage'
-
-import HrAdminDashboardPage from '@/pages/hrAdmin/HrAdminDashboardPage'
-import UserManagementPage from '@/pages/hrAdmin/UserManagementPage'
-import RoleManagementPage from '@/pages/hrAdmin/RoleManagementPage'
-import NotificationManagementPage from '@/pages/hrAdmin/NotificationManagementPage'
-import HrReportsPage from '@/pages/hrAdmin/HrReportsPage'
-import AuditLogsPage from '@/pages/hrAdmin/AuditLogsPage'
-
-import GenerateOfferPage from '@/pages/offer/GenerateOfferPage'
-import OfferApprovalPage from '@/pages/offer/OfferApprovalPage'
-import OfferDetailsPage from '@/pages/offer/OfferDetailsPage'
-
-import NotificationCenterPage from '@/pages/notifications/NotificationCenterPage'
-
-import ReportsRecruitmentDashboardPage from '@/pages/reports/RecruitmentDashboardPage'
-import HiringMetricsPage from '@/pages/reports/HiringMetricsPage'
-import TimeToHirePage from '@/pages/reports/TimeToHirePage'
-import RecruitmentFunnelPage from '@/pages/reports/RecruitmentFunnelPage'
-import CandidateReportsPage from '@/pages/reports/CandidateReportsPage'
-
-import SettingsProfilePage from '@/pages/settings/SettingsProfilePage'
-import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
-import PreferencesPage from '@/pages/settings/PreferencesPage'
-
-import LoginPage from '@/pages/auth/LoginPage'
-import RegisterPage from '@/pages/auth/RegisterPage'
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
-import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
-import DashboardRedirect from '@/pages/dashboard/DashboardRedirect'
-import LandingPage from '@/pages/landing/LandingPage'
+// Error/fallback pages stay eager: they must render synchronously (ErrorBoundary
+// depends on ServerErrorPage) and can't rely on a chunk fetch during an error.
 import NotFoundPage from '@/pages/errors/NotFoundPage'
 import UnauthorizedPage from '@/pages/errors/UnauthorizedPage'
 import SessionExpiredPage from '@/pages/errors/SessionExpiredPage'
 import ServerErrorPage from '@/pages/errors/ServerErrorPage'
 
+// Route-level code splitting: each page is its own chunk, fetched on demand, so a
+// user only downloads the pages their role actually visits (smaller first load).
+const CandidateDashboardPage = lazy(() => import('@/pages/candidate/CandidateDashboardPage'))
+const CandidateProfilePage = lazy(() => import('@/pages/candidate/CandidateProfilePage'))
+const CandidateProfileEditPage = lazy(() => import('@/pages/candidate/CandidateProfileEditPage'))
+const ResumeUploadPage = lazy(() => import('@/pages/candidate/ResumeUploadPage'))
+const ResumeParseResultPage = lazy(() => import('@/pages/candidate/ResumeParseResultPage'))
+const SkillsPage = lazy(() => import('@/pages/candidate/SkillsPage'))
+const EducationPage = lazy(() => import('@/pages/candidate/EducationPage'))
+const WorkExperiencePage = lazy(() => import('@/pages/candidate/WorkExperiencePage'))
+const CertificationsPage = lazy(() => import('@/pages/candidate/CertificationsPage'))
+const AppliedJobsPage = lazy(() => import('@/pages/candidate/AppliedJobsPage'))
+const JobSearchPage = lazy(() => import('@/pages/candidate/JobSearchPage'))
+const JobDetailsPage = lazy(() => import('@/pages/candidate/JobDetailsPage'))
+const JobApplicationConfirmationPage = lazy(() => import('@/pages/candidate/JobApplicationConfirmationPage'))
+
+const RecruiterDashboardPage = lazy(() => import('@/pages/recruiter/RecruiterDashboardPage'))
+const CreateJobPage = lazy(() => import('@/pages/recruiter/CreateJobPage'))
+const EditJobPage = lazy(() => import('@/pages/recruiter/EditJobPage'))
+const ViewJobsPage = lazy(() => import('@/pages/recruiter/ViewJobsPage'))
+const ViewApplicantsPage = lazy(() => import('@/pages/recruiter/ViewApplicantsPage'))
+const CandidateSearchPage = lazy(() => import('@/pages/recruiter/CandidateSearchPage'))
+const CandidateDetailsPage = lazy(() => import('@/pages/recruiter/CandidateDetailsPage'))
+const AiMatchResultsPage = lazy(() => import('@/pages/recruiter/AiMatchResultsPage'))
+const ShortlistCandidatesPage = lazy(() => import('@/pages/recruiter/ShortlistCandidatesPage'))
+const ScheduleInterviewPage = lazy(() => import('@/pages/recruiter/ScheduleInterviewPage'))
+const RecruitmentReportsPage = lazy(() => import('@/pages/recruiter/RecruitmentReportsPage'))
+
+const HiringManagerDashboardPage = lazy(() => import('@/pages/hiringManager/HiringManagerDashboardPage'))
+const JobApprovalsPage = lazy(() => import('@/pages/hiringManager/JobApprovalsPage'))
+const CandidateReviewPage = lazy(() => import('@/pages/hiringManager/CandidateReviewPage'))
+const InterviewFeedbackPage = lazy(() => import('@/pages/hiringManager/InterviewFeedbackPage'))
+const ApproveOfferPage = lazy(() => import('@/pages/hiringManager/ApproveOfferPage'))
+const RejectOfferPage = lazy(() => import('@/pages/hiringManager/RejectOfferPage'))
+
+const InterviewerDashboardPage = lazy(() => import('@/pages/interviewer/InterviewerDashboardPage'))
+const UpcomingInterviewsPage = lazy(() => import('@/pages/interviewer/UpcomingInterviewsPage'))
+const InterviewerCandidateDetailsPage = lazy(() => import('@/pages/interviewer/InterviewerCandidateDetailsPage'))
+const InterviewFeedbackFormPage = lazy(() => import('@/pages/interviewer/InterviewFeedbackFormPage'))
+
+const HrAdminDashboardPage = lazy(() => import('@/pages/hrAdmin/HrAdminDashboardPage'))
+const UserManagementPage = lazy(() => import('@/pages/hrAdmin/UserManagementPage'))
+const RegistrationApprovalsPage = lazy(() => import('@/pages/hrAdmin/RegistrationApprovalsPage'))
+const RoleManagementPage = lazy(() => import('@/pages/hrAdmin/RoleManagementPage'))
+const NotificationManagementPage = lazy(() => import('@/pages/hrAdmin/NotificationManagementPage'))
+const HrReportsPage = lazy(() => import('@/pages/hrAdmin/HrReportsPage'))
+const AuditLogsPage = lazy(() => import('@/pages/hrAdmin/AuditLogsPage'))
+
+const GenerateOfferPage = lazy(() => import('@/pages/offer/GenerateOfferPage'))
+const OfferApprovalPage = lazy(() => import('@/pages/offer/OfferApprovalPage'))
+const OfferDetailsPage = lazy(() => import('@/pages/offer/OfferDetailsPage'))
+
+const NotificationCenterPage = lazy(() => import('@/pages/notifications/NotificationCenterPage'))
+
+const ReportsRecruitmentDashboardPage = lazy(() => import('@/pages/reports/RecruitmentDashboardPage'))
+const HiringMetricsPage = lazy(() => import('@/pages/reports/HiringMetricsPage'))
+const TimeToHirePage = lazy(() => import('@/pages/reports/TimeToHirePage'))
+const RecruitmentFunnelPage = lazy(() => import('@/pages/reports/RecruitmentFunnelPage'))
+const CandidateReportsPage = lazy(() => import('@/pages/reports/CandidateReportsPage'))
+const HiringDecisionsReportPage = lazy(() => import('@/pages/reports/HiringDecisionsReportPage'))
+
+const SettingsProfilePage = lazy(() => import('@/pages/settings/SettingsProfilePage'))
+const ChangePasswordPage = lazy(() => import('@/pages/settings/ChangePasswordPage'))
+const PreferencesPage = lazy(() => import('@/pages/settings/PreferencesPage'))
+
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
+const DashboardRedirect = lazy(() => import('@/pages/dashboard/DashboardRedirect'))
+const LandingPage = lazy(() => import('@/pages/landing/LandingPage'))
+
+function RouteFallback() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress />
+    </Box>
+  )
+}
+
 export function AppRoutes() {
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Public landing page — shown before login */}
       <Route path={ROUTES.home} element={<LandingPage />} />
@@ -261,6 +280,14 @@ export function AppRoutes() {
           }
         />
         <Route
+          path={ROUTES.recruiterCandidateSearch}
+          element={
+            <RequireRole roles={ROLE_GROUPS.recruiter}>
+              <CandidateSearchPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path={ROUTES.recruiterCandidateDetails}
           element={
             <RequireRole roles={ROLE_GROUPS.recruiter}>
@@ -403,6 +430,14 @@ export function AppRoutes() {
           }
         />
         <Route
+          path={ROUTES.hrAdminRegistrations}
+          element={
+            <RequireRole roles={ROLE_GROUPS.hrAdmin}>
+              <RegistrationApprovalsPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path={ROUTES.hrAdminRoles}
           element={
             <RequireRole roles={ROLE_GROUPS.hrAdmin}>
@@ -498,6 +533,14 @@ export function AppRoutes() {
             </RequireRole>
           }
         />
+        <Route
+          path={ROUTES.reportsHiringDecisions}
+          element={
+            <RequireRole roles={[...ROLE_GROUPS.hiringManager, ...ROLE_GROUPS.hrAdmin]}>
+              <HiringDecisionsReportPage />
+            </RequireRole>
+          }
+        />
 
         {/* Settings — all authenticated roles */}
         <Route path={ROUTES.settingsProfile} element={<SettingsProfilePage />} />
@@ -508,5 +551,6 @@ export function AppRoutes() {
       <Route path={ROUTES.notFound} element={<NotFoundPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   )
 }

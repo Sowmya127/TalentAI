@@ -31,6 +31,7 @@ export const ROUTES = {
   recruiterJobEdit: '/recruiter/jobs/:jobId/edit',
   recruiterJobs: '/recruiter/jobs',
   recruiterJobApplicants: '/recruiter/jobs/:jobId/applicants',
+  recruiterCandidateSearch: '/recruiter/candidates',
   recruiterCandidateDetails: '/recruiter/candidates/:candidateId',
   recruiterAiMatchResults: '/recruiter/jobs/:jobId/ai-match',
   recruiterShortlist: '/recruiter/jobs/:jobId/shortlist',
@@ -54,6 +55,7 @@ export const ROUTES = {
   // HR Admin module
   hrAdminDashboard: '/hr-admin',
   hrAdminUsers: '/hr-admin/users',
+  hrAdminRegistrations: '/hr-admin/registrations',
   hrAdminRoles: '/hr-admin/roles',
   hrAdminNotifications: '/hr-admin/notifications',
   hrAdminReports: '/hr-admin/reports',
@@ -73,6 +75,7 @@ export const ROUTES = {
   reportsTimeToHire: '/reports/time-to-hire',
   reportsFunnel: '/reports/funnel',
   reportsCandidates: '/reports/candidates',
+  reportsHiringDecisions: '/reports/hiring-decisions',
 
   // Settings
   settingsProfile: '/settings/profile',
