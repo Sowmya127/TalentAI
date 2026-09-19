@@ -88,6 +88,16 @@ ai:
   api-key: ${OPENAI_API_KEY}
   model: ${AI_MODEL:gpt-4o-mini}
   request-timeout-ms: ${AI_REQUEST_TIMEOUT_MS:30000}
+  # Amazon Bedrock (managed LLMs). Off by default so the app runs fully on the
+  # deterministic heuristic; flip BEDROCK_ENABLED=true on a host whose IAM role
+  # grants bedrock:InvokeModel. Credentials come from the default AWS chain
+  # (EC2 instance role in prod) — never put AWS keys in config.
+  bedrock:
+    enabled: ${BEDROCK_ENABLED:false}
+    region: ${BEDROCK_REGION:ap-south-1}
+    model-id: ${BEDROCK_MODEL_ID:anthropic.claude-3-haiku-20240307-v1:0}
+    max-tokens: ${BEDROCK_MAX_TOKENS:1024}
+    timeout-ms: ${BEDROCK_TIMEOUT_MS:20000}
 
 storage:
   resume-upload-path: ${FILE_UPLOAD_PATH:/var/talentai/uploads/resumes}

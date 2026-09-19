@@ -11,6 +11,9 @@ import com.talentai.candidate.repository.CandidateSkillRepository;
 import com.talentai.candidate.repository.CertificationRepository;
 import com.talentai.candidate.repository.EducationRepository;
 import com.talentai.candidate.repository.WorkExperienceRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.talentai.ai.BedrockService;
+import com.talentai.ai.ResumeTextExtractor;
 import com.talentai.audit.service.AuditService;
 import com.talentai.common.exception.DuplicateResourceException;
 import com.talentai.common.exception.ResourceNotFoundException;
@@ -41,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -60,6 +64,8 @@ public class CandidateService {
     private final SkillService skillService;
     private final UserRepository userRepository;
     private final AuditService auditService;
+    private final BedrockService bedrockService;
+    private final ResumeTextExtractor resumeTextExtractor;
 
     @Value("${file.upload-path:./uploads/resumes}")
     private String uploadPath;
@@ -445,10 +451,12 @@ public class CandidateService {
     }
 
     /**
-     * No external AI service is configured (OPENAI_API_KEY is unset), so this
-     * returns a deterministic extraction built from the candidate's existing
-     * structured data rather than calling an LLM. Status is PendingReview per
-     * BR-021/BR-022 (recruiter must review before it overwrites verified fields).
+     * Parses the candidate's uploaded resume. When Amazon Bedrock is enabled and
+     * a PDF resume is on file, the resume text is read and sent to the model to
+     * extract structured fields; otherwise (or on any AI failure) this falls back
+     * to a deterministic extraction built from the candidate's existing structured
+     * data. Status is always PendingReview per BR-021/BR-022 — a recruiter must
+     * review the result before it overwrites verified fields.
      */
     @Transactional(readOnly = true)
     public ResumeParseResponse parseResume(Long candidateId) {
@@ -460,8 +468,71 @@ public class CandidateService {
                 .map(WorkExperience::getCompanyName).toList();
         String education = educationRepository.findByCandidateIdAndIsActiveTrue(candidateId).stream()
                 .findFirst().map(Education::getDegree).orElse(null);
-        ResumeParseExtracted extracted = new ResumeParseExtracted(skills, c.getTotalExperience(), education, certs, companies);
+        ResumeParseExtracted deterministic =
+                new ResumeParseExtracted(skills, c.getTotalExperience(), education, certs, companies);
+
+        ResumeParseExtracted extracted = aiExtractResume(c, deterministic);
         return new ResumeParseResponse(candidateId, extracted, "PendingReview");
+    }
+
+    /**
+     * Reads the uploaded PDF resume and asks Bedrock to extract structured fields,
+     * merging AI values over the deterministic ones (AI wins per field when it
+     * returns something non-empty). Returns the deterministic extraction unchanged
+     * when Bedrock is off, no readable PDF is on file, or anything fails.
+     */
+    private ResumeParseExtracted aiExtractResume(Candidate c, ResumeParseExtracted fallback) {
+        if (!bedrockService.isEnabled() || c.getResumeUrl() == null || c.getResumeUrl().isBlank()) {
+            return fallback;
+        }
+        String url = c.getResumeUrl();
+        String stored = url.substring(url.lastIndexOf('/') + 1);
+        Path file = Paths.get(uploadPath).resolve(stored);
+        if (!Files.isReadable(file)) {
+            return fallback;
+        }
+        Optional<String> text = resumeTextExtractor.extract(file, stored);
+        if (text.isEmpty()) {
+            return fallback;
+        }
+        String system = "You extract structured data from a resume. Respond with ONLY compact JSON, no prose, "
+                + "in the form {\"skills\": string[], \"experienceYears\": number|null, "
+                + "\"education\": string|null, \"certifications\": string[], \"companies\": string[]}.";
+        return bedrockService.completeJson(system, "Resume text:\n" + text.get())
+                .map(json -> mergeExtraction(json, fallback))
+                .orElse(fallback);
+    }
+
+    private ResumeParseExtracted mergeExtraction(JsonNode json, ResumeParseExtracted fallback) {
+        List<String> skills = jsonList(json.path("skills"));
+        List<String> certs = jsonList(json.path("certifications"));
+        List<String> companies = jsonList(json.path("companies"));
+        BigDecimal experience = fallback.experience();
+        JsonNode exp = json.path("experienceYears");
+        if (exp.isNumber()) {
+            experience = BigDecimal.valueOf(exp.asDouble());
+        }
+        String education = json.path("education").asText(null);
+        return new ResumeParseExtracted(
+                skills.isEmpty() ? fallback.skills() : skills,
+                experience,
+                (education == null || education.isBlank()) ? fallback.education() : education,
+                certs.isEmpty() ? fallback.certifications() : certs,
+                companies.isEmpty() ? fallback.companies() : companies);
+    }
+
+    private static List<String> jsonList(JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        node.forEach(n -> {
+            String s = n.asText(null);
+            if (s != null && !s.isBlank()) {
+                out.add(s);
+            }
+        });
+        return out;
     }
 
     // --- helpers ---

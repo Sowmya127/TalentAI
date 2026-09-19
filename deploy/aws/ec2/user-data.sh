@@ -39,6 +39,13 @@ FILE_UPLOAD_PATH=/var/talentai/uploads/resumes
 CORS_ALLOWED_ORIGINS=http://REPLACE_WITH_PUBLIC_HOST
 SWAGGER_UI_ENABLED=false
 ACTUATOR_HEALTH_DETAILS=never
+# --- AI (Amazon Bedrock). Off by default; the app runs fully on the
+# deterministic heuristic. Flip to true only AFTER (1) granting the EC2 instance
+# role bedrock:InvokeModel and (2) enabling Claude model access in this region.
+# See deploy/aws/bedrock/README.md. No AWS keys here — creds come from the role.
+BEDROCK_ENABLED=false
+BEDROCK_REGION=ap-south-1
+BEDROCK_MODEL_ID=anthropic.claude-3-haiku-20240307-v1:0
 ENVEOF
   chmod 600 /etc/talentai/talentai.env
 fi

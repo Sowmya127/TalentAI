@@ -18,9 +18,16 @@ public final class AiMatchDtos {
     public record PartialMatch(String skill, String note) {
     }
 
+    /**
+     * The deterministic score/breakdown is always populated. {@code aiInsight},
+     * {@code strengths} and {@code concerns} are added by Amazon Bedrock when it
+     * is enabled, and are null/empty otherwise — the numeric score stays the
+     * explainable, deterministic one either way.
+     */
     public record MatchResult(
             Long matchId, Long candidateId, Long jobId, int overallMatch, Breakdown breakdown,
-            List<String> matchedSkills, List<PartialMatch> partialMatches, List<String> missingSkills) {
+            List<String> matchedSkills, List<PartialMatch> partialMatches, List<String> missingSkills,
+            String aiInsight, List<String> strengths, List<String> concerns) {
     }
 
     public record RankedCandidate(Long candidateId, String name, java.math.BigDecimal matchScore, String status) {

@@ -72,6 +72,23 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <!-- AI: Amazon Bedrock (managed foundation models) + PDF text extraction for resume parsing.
+             Versions come from the AWS SDK BOM (see dependencyManagement). url-connection-client is a
+             lightweight sync HTTP implementation so the Bedrock client always has a transport. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockruntime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.31</version>
+        </dependency>
+
         <!-- Database -->
         <dependency>
             <groupId>com.mysql</groupId>
@@ -161,6 +178,13 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>1.20.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.28.29</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

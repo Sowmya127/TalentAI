@@ -1,5 +1,7 @@
 package com.talentai.aimatch.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.talentai.ai.BedrockService;
 import com.talentai.aimatch.dto.AiMatchDtos.*;
 import com.talentai.aimatch.entity.AiMatchDetail;
 import com.talentai.aimatch.repository.AiMatchDetailRepository;
@@ -34,10 +36,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Deterministic, explainable candidate-job matching. No external LLM is
- * configured (OPENAI_API_KEY unset), so scores are computed from skill
- * overlap, experience fit, and education presence — every score carries
- * its supporting factors (Constraint C04 / NFR-AI-02).
+ * Candidate-job matching. The score is always deterministic and explainable —
+ * computed from skill overlap, experience fit, and education presence, every
+ * score carrying its supporting factors (Constraint C04 / NFR-AI-02). When
+ * Amazon Bedrock is enabled ({@code ai.bedrock.enabled=true}) a qualitative
+ * narrative (summary, strengths, concerns) is layered on top via
+ * {@link BedrockService}; the numeric score is never altered by the model, and
+ * any AI failure leaves the deterministic result intact.
  */
 @Service
 @RequiredArgsConstructor
@@ -52,6 +57,7 @@ public class AiMatchService {
     private final ApplicationRepository applicationRepository;
     private final AiMatchDetailRepository matchDetailRepository;
     private final UserRepository userRepository;
+    private final BedrockService bedrockService;
 
     @Transactional
     public MatchResult match(Long candidateId, Long jobId, Long actorUserId) {
@@ -109,9 +115,64 @@ public class AiMatchService {
             applicationRepository.save(app);
         }
 
-        return new MatchResult(matchId, candidateId, jobId, overall,
+        MatchResult result = new MatchResult(matchId, candidateId, jobId, overall,
                 new Breakdown(skillsScore, experienceScore, educationScore, preferredScore),
-                matched, partial, missing);
+                matched, partial, missing, null, null, null);
+        return enrichWithAi(result, candidate, job);
+    }
+
+    /**
+     * When Bedrock is enabled, layers a qualitative narrative (summary, strengths,
+     * concerns) on top of the deterministic score. The numeric score is never
+     * changed by the model — it stays explainable. Any failure returns the
+     * deterministic result unchanged.
+     */
+    private MatchResult enrichWithAi(MatchResult base, Candidate candidate, Job job) {
+        if (!bedrockService.isEnabled()) {
+            return base;
+        }
+        String system = "You are a recruitment assistant assessing how well a candidate fits a job. "
+                + "Respond with ONLY compact JSON, no prose, in the form "
+                + "{\"summary\": string (<=60 words), \"strengths\": string[] (max 3), "
+                + "\"concerns\": string[] (max 3)}.";
+        String user = ("Job title: %s%nMinimum experience required (years): %s%n"
+                + "Candidate experience (years): %s%nMatched required skills: %s%n"
+                + "Missing required skills: %s%nDeterministic match score: %d/100.%n"
+                + "Assess the fit.")
+                .formatted(
+                        nz(job.getTitle()),
+                        nz(job.getExperienceRequiredMin()),
+                        nz(candidate.getTotalExperience()),
+                        base.matchedSkills().isEmpty() ? "none" : String.join(", ", base.matchedSkills()),
+                        base.missingSkills().isEmpty() ? "none" : String.join(", ", base.missingSkills()),
+                        base.overallMatch());
+
+        return bedrockService.completeJson(system, user)
+                .map(json -> new MatchResult(base.matchId(), base.candidateId(), base.jobId(),
+                        base.overallMatch(), base.breakdown(), base.matchedSkills(), base.partialMatches(),
+                        base.missingSkills(),
+                        json.path("summary").asText(null),
+                        toStringList(json.path("strengths")),
+                        toStringList(json.path("concerns"))))
+                .orElse(base);
+    }
+
+    private static List<String> toStringList(JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        node.forEach(n -> {
+            String s = n.asText(null);
+            if (s != null && !s.isBlank()) {
+                out.add(s);
+            }
+        });
+        return out;
+    }
+
+    private static String nz(Object o) {
+        return o == null ? "unspecified" : o.toString();
     }
 
     @Transactional(readOnly = true)

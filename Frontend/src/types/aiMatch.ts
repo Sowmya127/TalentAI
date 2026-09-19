@@ -20,6 +20,10 @@ export interface AiMatchResult {
   matchedSkills: string[]
   partialMatches: PartialMatch[]
   missingSkills: string[]
+  /** Present only when Amazon Bedrock is enabled; the numeric score stays deterministic. */
+  aiInsight?: string | null
+  strengths?: string[] | null
+  concerns?: string[] | null
 }
 
 /** A row in GET /jobs/{jobId}/ranking. */

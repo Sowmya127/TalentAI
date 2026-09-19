@@ -78,6 +78,8 @@ class CandidateServiceTest {
     @Mock private SkillService skillService;
     @Mock private UserRepository userRepository;
     @Mock private com.talentai.audit.service.AuditService auditService;
+    @Mock private com.talentai.ai.BedrockService bedrockService;
+    @Mock private com.talentai.ai.ResumeTextExtractor resumeTextExtractor;
 
     @InjectMocks private CandidateService candidateService;
 
