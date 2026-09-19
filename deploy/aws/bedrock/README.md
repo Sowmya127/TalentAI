@@ -3,42 +3,42 @@
 TalentAI's two AI features — **candidate–job matching** (adds a written
 assessment: summary + strengths + concerns on top of the deterministic score)
 and **résumé parsing** (extracts skills / experience / education / certs /
-companies from an uploaded PDF) — call **Amazon Bedrock** with an Anthropic
-Claude model.
+companies from an uploaded PDF) — call **Amazon Bedrock** through the
+model-agnostic **Converse API**. The model is chosen by config, so you can run an
+Amazon model today and switch to Anthropic Claude later with a single env var and
+no code change.
 
 The app ships with AI **off** (`BEDROCK_ENABLED=false`). In that state everything
 works on the deterministic heuristic, exactly as before. Turning it on is three
 steps and needs **no code change and no AWS keys** — the EC2 instance role
 provides credentials.
 
+**Default model: `amazon.titan-text-express-v1`** — an Amazon model that runs
+on-demand in ap-south-1 and, unlike Anthropic, needs **no use-case approval**. So
+step 1 is usually a no-op. See *Switching to Claude* at the bottom once your
+Anthropic access is granted.
+
 ---
 
-## 1. Enable Claude model access (once per account)
+## 1. Model access
 
 AWS **retired the "Model access" page**. Serverless foundation models are now
 enabled automatically the first time you invoke them in an account — there is no
-page to click through anymore. **One exception applies to us:** Anthropic models
-require first-time users to **submit use-case details** before the first invoke
-will succeed.
+page to click through.
 
-1. AWS Console → **Amazon Bedrock** → set the Region (top-right) to the one you'll
-   use (default here is **ap-south-1 / Mumbai**, matching the EC2/RDS stack; Claude
-   3 Haiku runs on-demand there).
-2. Left nav → **Model catalog** → open **Anthropic → Claude 3 Haiku**. If a
-   **Submit use case details** (Anthropic access request) form appears, fill it in
-   once — a short questionnaire (company, use case). Approval is typically quick.
-3. That's it — no "grant access" step. The first `InvokeModel` call from the app
-   enables the model account-wide.
+- **Amazon models (the default, Titan):** nothing to do. The first Converse call
+  from the app enables the model account-wide.
+- **Anthropic models (Claude):** first-time users must **submit use-case details**
+  once (Bedrock → **Model catalog** → *Anthropic → Claude…* → *Submit use case
+  details*). On a brand-new account this can return *"not authorized… create a
+  support case"* — that's an account-level gate; see *Switching to Claude*. This
+  is why the default is an Amazon model.
 
-> Using a different Region (e.g. us-east-1)? Just set `BEDROCK_REGION` to match —
-> enablement is account-wide, but the model must be **offered** in that Region. If
-> Claude 3 Haiku isn't available on-demand there, either set
-> `BEDROCK_REGION=us-east-1` (cross-Region calls work) or use an inference-profile
-> model id. Update the IAM policy ARN's region to match too.
->
-> If the very first invoke returns `AccessDeniedException` mentioning the model,
-> it's this Anthropic use-case step (step 2) not yet completed — the app just
-> falls back to the heuristic until it is.
+> Region: default is **ap-south-1 / Mumbai** (matches the EC2/RDS stack). Titan
+> Text Express runs on-demand there. To use another Region, set `BEDROCK_REGION`
+> and update the IAM policy ARN's region to match. If a chosen model isn't offered
+> on-demand in a Region, the call fails and the app just falls back to the
+> heuristic — harmless, but nothing lights up until the model/region line up.
 
 ## 2. Grant the EC2 instance role permission to call Bedrock
 
@@ -48,9 +48,11 @@ it may invoke the model:
 1. Console → **IAM** → **Roles** → open the role attached to the TalentAI EC2
    instance (EC2 → the instance → **Security** tab → *IAM Role*).
 2. **Add permissions → Create inline policy → JSON**.
-3. Paste [`iam-bedrock-policy.json`](iam-bedrock-policy.json). If your
-   `BEDROCK_REGION`/model differ, edit the `Resource` ARN's region and model id
-   to match (or use `"Resource": "*"` while testing). **Next → Create policy.**
+3. Paste [`iam-bedrock-policy.json`](iam-bedrock-policy.json). It allows
+   `bedrock:InvokeModel` + `bedrock:Converse` on **all** foundation models in
+   ap-south-1, so it already covers both Titan and Claude — no edit needed when
+   you switch models. Using another Region? Change the ARN's region.
+   **Next → Create policy.**
 
 No access keys are stored anywhere — the SDK's default credential chain picks up
 the instance role automatically.
@@ -89,9 +91,28 @@ curl -fsS http://localhost/api/actuator/health && echo OK
 |-----|---------|---------|
 | `BEDROCK_ENABLED` | `false` | Master switch for both AI features |
 | `BEDROCK_REGION` | `ap-south-1` | Bedrock Region (must offer the model) |
-| `BEDROCK_MODEL_ID` | `anthropic.claude-3-haiku-20240307-v1:0` | Model to invoke |
+| `BEDROCK_MODEL_ID` | `amazon.titan-text-express-v1` | Any Bedrock chat model (Converse-compatible) |
 | `BEDROCK_MAX_TOKENS` | `1024` | Max output tokens per call |
 | `BEDROCK_TIMEOUT_MS` | `20000` | Per-call API timeout |
+
+## Switching to Claude (once Anthropic access is granted)
+
+The code uses the Converse API, so switching models is config-only — no
+redeploy of code needed:
+
+1. Complete the Anthropic use-case step (Bedrock → Model catalog → Claude →
+   *Submit use case details*). On a new account that first returns *"not
+   authorized"*, open the AWS **support case** it points you to; access is
+   usually granted in 1–2 business days.
+2. On the EC2 box, point the model id at Claude and restart:
+
+```bash
+sudo sed -i 's|^BEDROCK_MODEL_ID=.*|BEDROCK_MODEL_ID=anthropic.claude-3-haiku-20240307-v1:0|' /etc/talentai/talentai.env
+sudo systemctl restart talentai
+```
+
+The IAM policy already covers Claude (it grants all foundation models in the
+Region), so nothing else changes.
 
 ## Failure behaviour
 
@@ -103,6 +124,6 @@ the deterministic, explainable one — Bedrock only adds narrative around it.
 
 ## Cost
 
-Claude 3 Haiku is inexpensive (fractions of a cent per matching/parse call at
+These models are inexpensive (fractions of a cent per matching/parse call at
 these token sizes). Calls happen only when a recruiter opens match results or a
 résumé is parsed — not on a schedule. Your AWS credits cover ordinary usage.

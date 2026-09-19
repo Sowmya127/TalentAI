@@ -45,7 +45,9 @@ ACTUATOR_HEALTH_DETAILS=never
 # See deploy/aws/bedrock/README.md. No AWS keys here — creds come from the role.
 BEDROCK_ENABLED=false
 BEDROCK_REGION=ap-south-1
-BEDROCK_MODEL_ID=anthropic.claude-3-haiku-20240307-v1:0
+# Amazon model via the Converse API — no Anthropic approval needed. Switch to
+# anthropic.claude-3-haiku-20240307-v1:0 once Anthropic access is granted.
+BEDROCK_MODEL_ID=amazon.titan-text-express-v1
 ENVEOF
   chmod 600 /etc/talentai/talentai.env
 fi

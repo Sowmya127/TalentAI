@@ -2,36 +2,45 @@ package com.talentai.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
-import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
-import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
+import software.amazon.awssdk.services.bedrockruntime.model.ContentBlock;
+import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseRequest;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseResponse;
+import software.amazon.awssdk.services.bedrockruntime.model.InferenceConfiguration;
+import software.amazon.awssdk.services.bedrockruntime.model.Message;
 
 import java.time.Duration;
 import java.util.Optional;
 
 /**
- * Thin wrapper over Amazon Bedrock's InvokeModel API for Anthropic Claude
- * models (Messages API format). Every call is best-effort: when Bedrock is
- * disabled or the request fails for any reason (no credentials, model access
- * not granted, throttling, timeout, malformed output), the methods return an
- * empty {@link Optional} so callers transparently fall back to the deterministic
- * logic. The application therefore never breaks because of the AI layer.
+ * Thin wrapper over Amazon Bedrock's <b>Converse</b> API. Converse gives one
+ * model-agnostic request/response shape, so the same code works across Amazon
+ * Titan / Nova, Anthropic Claude, Meta Llama, Mistral, etc. — switching models
+ * is just a change to {@code ai.bedrock.model-id}, no code change.
  *
- * <p>Credentials are resolved via the default AWS provider chain — in
- * production that is the EC2 instance role; locally it is the usual
+ * <p>Every call is best-effort: when Bedrock is disabled or the request fails
+ * for any reason (no credentials, model access not granted, throttling, timeout,
+ * malformed output), the methods return an empty {@link Optional} so callers
+ * transparently fall back to the deterministic logic. The application therefore
+ * never breaks because of the AI layer.
+ *
+ * <p>Credentials are resolved via the default AWS provider chain — in production
+ * that is the EC2 instance role; locally it is the usual
  * {@code ~/.aws/credentials} / environment variables. No secrets live in config.
+ *
+ * <p>The system instruction is folded into the user turn rather than sent as a
+ * Converse {@code system} block, because not every model supports system prompts
+ * (e.g. Titan Text); merging keeps one code path portable across all of them.
  */
 @Service
 public class BedrockService {
@@ -51,7 +60,7 @@ public class BedrockService {
     public BedrockService(
             @Value("${ai.bedrock.enabled:false}") boolean enabled,
             @Value("${ai.bedrock.region:ap-south-1}") String region,
-            @Value("${ai.bedrock.model-id:anthropic.claude-3-haiku-20240307-v1:0}") String modelId,
+            @Value("${ai.bedrock.model-id:amazon.titan-text-express-v1}") String modelId,
             @Value("${ai.bedrock.max-tokens:1024}") int maxTokens,
             @Value("${ai.bedrock.timeout-ms:20000}") long timeoutMs) {
         this.enabled = enabled;
@@ -66,50 +75,47 @@ public class BedrockService {
     }
 
     /**
-     * Sends a single-turn prompt to the configured Claude model and returns the
-     * concatenated text of the response, or empty on any failure.
+     * Sends a single-turn prompt to the configured model via Converse and returns
+     * the concatenated text of the response, or empty on any failure.
      */
     public Optional<String> complete(String systemPrompt, String userPrompt) {
         if (!enabled) {
             return Optional.empty();
         }
         try {
-            ObjectNode body = mapper.createObjectNode();
-            body.put("anthropic_version", "bedrock-2023-05-31");
-            body.put("max_tokens", maxTokens);
-            if (systemPrompt != null && !systemPrompt.isBlank()) {
-                body.put("system", systemPrompt);
-            }
-            ArrayNode messages = body.putArray("messages");
-            ObjectNode userMsg = messages.addObject();
-            userMsg.put("role", "user");
-            ArrayNode content = userMsg.putArray("content");
-            ObjectNode textBlock = content.addObject();
-            textBlock.put("type", "text");
-            textBlock.put("text", userPrompt == null ? "" : userPrompt);
+            String text = (systemPrompt == null || systemPrompt.isBlank())
+                    ? nullToEmpty(userPrompt)
+                    : systemPrompt + "\n\n" + nullToEmpty(userPrompt);
 
-            InvokeModelResponse response = client().invokeModel(InvokeModelRequest.builder()
+            Message message = Message.builder()
+                    .role(ConversationRole.USER)
+                    .content(ContentBlock.fromText(text))
+                    .build();
+
+            ConverseResponse response = client().converse(ConverseRequest.builder()
                     .modelId(modelId)
-                    .contentType("application/json")
-                    .accept("application/json")
-                    .body(SdkBytes.fromUtf8String(mapper.writeValueAsString(body)))
+                    .messages(message)
+                    .inferenceConfig(InferenceConfiguration.builder()
+                            .maxTokens(maxTokens)
+                            .temperature(0.2f)
+                            .build())
                     .build());
 
-            JsonNode root = mapper.readTree(response.body().asByteArray());
-            JsonNode contentArr = root.path("content");
-            if (contentArr.isArray() && !contentArr.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                for (JsonNode block : contentArr) {
-                    if ("text".equals(block.path("type").asText())) {
-                        sb.append(block.path("text").asText());
+            StringBuilder sb = new StringBuilder();
+            if (response.output() != null && response.output().message() != null) {
+                for (ContentBlock block : response.output().message().content()) {
+                    if (block.text() != null) {
+                        sb.append(block.text());
                     }
                 }
-                return Optional.of(sb.toString());
             }
-            log.warn("Bedrock returned no text content (model {})", modelId);
-            return Optional.empty();
+            if (sb.length() == 0) {
+                log.warn("Bedrock Converse returned no text content (model {})", modelId);
+                return Optional.empty();
+            }
+            return Optional.of(sb.toString());
         } catch (Exception e) {
-            log.warn("Bedrock invoke failed (model {}, region {}); falling back to deterministic logic: {}",
+            log.warn("Bedrock Converse failed (model {}, region {}); falling back to deterministic logic: {}",
                     modelId, region, e.toString());
             return Optional.empty();
         }
@@ -141,6 +147,10 @@ public class BedrockService {
             return text.substring(start, end + 1);
         }
         return text;
+    }
+
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
     }
 
     private BedrockRuntimeClient client() {

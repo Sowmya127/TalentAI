@@ -95,7 +95,10 @@ ai:
   bedrock:
     enabled: ${BEDROCK_ENABLED:false}
     region: ${BEDROCK_REGION:ap-south-1}
-    model-id: ${BEDROCK_MODEL_ID:anthropic.claude-3-haiku-20240307-v1:0}
+    # Uses the model-agnostic Converse API, so any Bedrock chat model works here.
+    # Default is an Amazon model (no Anthropic use-case approval needed); switch to
+    # e.g. anthropic.claude-3-haiku-20240307-v1:0 once Anthropic access is granted.
+    model-id: ${BEDROCK_MODEL_ID:amazon.titan-text-express-v1}
     max-tokens: ${BEDROCK_MAX_TOKENS:1024}
     timeout-ms: ${BEDROCK_TIMEOUT_MS:20000}
 
